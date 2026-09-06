@@ -1,0 +1,6 @@
+#!/bin/sh
+set -eu
+cd "$(dirname "$0")/.."
+docker compose run --rm -e RAILS_ENV=test web bin/rails db:prepare
+docker compose run --rm -e RAILS_ENV=test web bin/rails test
+docker compose run --rm -e RAILS_ENV=test web bin/rails zeitwerk:check

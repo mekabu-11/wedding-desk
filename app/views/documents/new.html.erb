@@ -1,0 +1,13 @@
+<%= link_to "← 資料と連絡", documents_path, class: "back-link" %><header class="page-heading"><div><p class="eyebrow">ADD A NOTE</p><h1>届いた連絡を、ここへ。</h1><p>メールやLINE、打ち合わせメモをそのまま貼り付けてください。</p></div></header>
+<div class="input-grid"><section class="surface"><%= render "shared/errors", record: @document %>
+<% unless Analysis::OpenaiClient.configured? %><div class="callout"><strong>AI連携は未設定です</strong><p>資料の保存はできます。解析にはAPI設定が必要です。使い心地はサンプルで試せます。</p></div><% end %>
+<%= form_with model: @document, class: "form-stack" do |f| %>
+  <div class="field"><%= f.label :title, "タイトル", class: "optional-label" %><%= f.text_field :title, maxlength: 150, placeholder: "例：式場からの次回打ち合わせの連絡" %><small>空欄なら本文の先頭から作成します。</small></div>
+  <div class="form-grid"><div class="field"><%= f.label :source_type, "情報元" %><%= f.select :source_type, Document::SOURCES.map { |key, value| [value, key] } %></div><div class="field"><%= f.label :direction, "送受信の方向" %><%= f.select :direction, Document::DIRECTIONS.map { |key, value| [value, key] } %></div></div>
+  <div class="field"><%= f.label :occurred_at, "連絡があった日時（任意）" %><%= f.datetime_local_field :occurred_at %><small>日本時間。「明日」などの期限を読み取る基準になります。不明なら空欄に。</small></div>
+  <div class="field"><%= f.label :original_text, "本文" %><%= f.text_area :original_text, rows: 13, required: true, maxlength: 30000, placeholder: "ここに連絡の本文を貼り付けてください。
+
+日付や発信者の情報も含めると、期限や担当を確認しやすくなります。" %><small>30,000文字まで。不要な住所や電話番号は除いてください。</small></div>
+  <p class="micro">AI設定済みの場合、本文と担当の表示名をOpenAIへ送って解析します。抽出結果は確認するまでタスクになりません。</p>
+  <%= f.submit "保存して整理する →", class: "button primary" %>
+<% end %></section><aside class="input-aside"><p class="eyebrow">HOW IT WORKS</p><h2>連絡から、次の一歩へ。</h2><ol class="steps"><li><span>01</span><div><strong>そのまま残す</strong><p>届いた連絡をコピーして登録。</p></div></li><li><span>02</span><div><strong>原文と確かめる</strong><p>見つかった候補の期限や担当を確認。</p></div></li><li><span>03</span><div><strong>やることに加える</strong><p>確認した内容だけを一覧に反映。</p></div></li></ol><div class="aside-note">現在はテキスト登録に対応しています。PDF・画像は次の開発段階で追加します。</div><%= button_to "架空のサンプルで試す", sample_documents_path, class: "button secondary full" %></aside></div>

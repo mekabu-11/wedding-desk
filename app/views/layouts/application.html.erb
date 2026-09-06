@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <title><%= content_for(:title) || "Wedding Desk — ふたりの準備を、ひとつに。" %></title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <%= csrf_meta_tags %><%= csp_meta_tag %>
+  <%= stylesheet_link_tag "application" %>
+  <%= yield :head %>
+</head>
+<body>
+<% if current_user && current_wedding %>
+  <aside class="sidebar">
+    <%= link_to root_path, class: "brand" do %><span class="brand-mark">w.</span><span>Wedding Desk<small>ふたりの準備を、ひとつに。</small></span><% end %>
+    <div class="sidebar-label">WORKSPACE</div>
+    <nav aria-label="メインナビゲーション">
+      <%= nav_link("概要", root_path, controller_name == "dashboard") %>
+      <%= nav_link("資料と連絡", documents_path, controller_name.in?(%w[documents candidates])) %>
+      <%= nav_link("やること", tasks_path, controller_name == "tasks") %>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="wedding-mini"><span class="eyebrow">OUR WEDDING</span><strong><%= current_wedding.name %></strong><span><%= current_wedding.wedding_date&.strftime("%Y . %m . %d") || "挙式日未設定" %></span></div>
+      <%= nav_link("結婚式の設定", edit_wedding_path, controller_name == "weddings") %>
+      <%= button_to "ログアウト", session_path, method: :delete, class: "logout" %>
+    </div>
+  </aside>
+<% end %>
+<main class="<%= current_user && current_wedding ? 'main' : 'standalone' %>" id="main">
+  <% flash.each do |type, message| %><div class="flash <%= type == 'alert' ? 'flash-alert' : '' %>" role="<%= type == 'alert' ? 'alert' : 'status' %>"><%= message %></div><% end %>
+  <%= yield %>
+</main>
+</body>
+</html>

@@ -1,0 +1,27 @@
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS", 5) %>
+  host: <%= ENV.fetch("DB_HOST", "db") %>
+  username: <%= ENV.fetch("DB_USER", "wedding") %>
+  password: <%= ENV.fetch("DB_PASSWORD", "local-development-only") %>
+development:
+  primary:
+    <<: *default
+    database: wedding_desk_development
+  queue:
+    <<: *default
+    database: wedding_desk_development_queue
+    migrations_paths: db/queue_migrate
+test:
+  primary:
+    <<: *default
+    database: wedding_desk_test
+production:
+  primary:
+    <<: *default
+    url: <%= ENV["DATABASE_URL"] %>
+  queue:
+    <<: *default
+    url: <%= ENV["QUEUE_DATABASE_URL"] %>
+    migrations_paths: db/queue_migrate

@@ -1,0 +1,13 @@
+.git
+.env
+.env.*
+!.env.example
+log/*
+tmp/*
+storage/*
+artifacts
+node_modules
+vendor/bundle
+
+config/master.key
+config/credentials/*.key

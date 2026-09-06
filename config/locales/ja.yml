@@ -1,0 +1,36 @@
+ja:
+  date:
+    formats:
+      default: "%Y/%m/%d"
+  time:
+    formats:
+      default: "%Y/%m/%d %H:%M"
+  errors:
+    messages:
+      blank: "を入力してください"
+      too_long: "は%{count}文字以内で入力してください"
+      invalid: "が正しくありません"
+      taken: "は登録済みです"
+      inclusion: "を選択してください"
+      not_a_number: "は数値で入力してください"
+      not_an_integer: "は整数で入力してください"
+      greater_than_or_equal_to: "は%{count}以上にしてください"
+      less_than: "は%{count}未満にしてください"
+    format: "%{attribute}%{message}"
+  activerecord:
+    attributes:
+      wedding:
+        name: "結婚式名"
+        wedding_date: "挙式日"
+        budget_yen: "予算"
+      document:
+        title: "タイトル"
+        occurred_at: "連絡日時"
+        original_text: "本文"
+        source_type: "情報元"
+        direction: "送受信方向"
+      task:
+        title: "タイトル"
+        due_on: "期限日"
+        due_at: "期限日時"
+        description: "詳細"

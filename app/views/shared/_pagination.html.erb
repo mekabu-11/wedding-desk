@@ -1,0 +1,1 @@
+<nav class="pagination" aria-label="ページ"><% if page > 1 %><%= link_to "← 前へ", url_for(request.query_parameters.merge(page: page - 1)), class: "text-link" %><% end %><span><%= total %>件 / <%= page %>ページ</span><% if total > page * 30 %><%= link_to "次へ →", url_for(request.query_parameters.merge(page: page + 1)), class: "text-link" %><% end %></nav>

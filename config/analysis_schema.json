@@ -1,0 +1,128 @@
+{
+  "type": "object",
+  "properties": {
+    "summary": {
+      "type": "string",
+      "maxLength": 2000
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "venue",
+        "guest",
+        "food",
+        "drink",
+        "dress",
+        "tuxedo",
+        "flower",
+        "photo",
+        "movie",
+        "music",
+        "gift",
+        "invitation",
+        "accommodation",
+        "insurance",
+        "payment",
+        "schedule",
+        "other"
+      ]
+    },
+    "tasks": {
+      "type": "array",
+      "maxItems": 30,
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 150
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "assignee": {
+            "type": "string",
+            "enum": [
+              "self",
+              "partner",
+              "both",
+              "unknown"
+            ]
+          },
+          "due_on": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "due_at": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "original_due_text": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "venue",
+              "guest",
+              "food",
+              "drink",
+              "dress",
+              "tuxedo",
+              "flower",
+              "photo",
+              "movie",
+              "music",
+              "gift",
+              "invitation",
+              "accommodation",
+              "insurance",
+              "payment",
+              "schedule",
+              "other"
+            ]
+          },
+          "uncertainty_reasons": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 10
+          },
+          "quote": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 3000
+          }
+        },
+        "required": [
+          "title",
+          "description",
+          "assignee",
+          "due_on",
+          "due_at",
+          "original_due_text",
+          "category",
+          "uncertainty_reasons",
+          "quote"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "summary",
+    "category",
+    "tasks"
+  ],
+  "additionalProperties": false
+}

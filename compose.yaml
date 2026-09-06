@@ -1,0 +1,41 @@
+name: wedding-desk
+x-app: &app
+  build: .
+  env_file:
+    - path: .env
+      required: false
+  environment: &app-env
+    RAILS_ENV: development
+    DB_HOST: db
+    DB_USER: wedding
+    DB_PASSWORD: ${DB_PASSWORD:-local-development-only}
+    RAILS_LOG_LEVEL: info
+  volumes:
+    - .:/app
+  depends_on:
+    db:
+      condition: service_healthy
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: wedding
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-local-development-only}
+      POSTGRES_DB: wedding_desk_development
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wedding -d wedding_desk_development"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+  web:
+    <<: *app
+    command: ["bin/rails", "server", "-b", "0.0.0.0"]
+    ports:
+      - "127.0.0.1:${APP_PORT:-3210}:3000"
+  worker:
+    <<: *app
+    command: ["bin/jobs"]
+volumes:
+  postgres_data:

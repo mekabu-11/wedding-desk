@@ -1,0 +1,21 @@
+#!/bin/sh
+set -eu
+cd "$(dirname "$0")/.."
+if [ ! -f .env ]; then
+  umask 077
+  docker run --rm ruby:3.4-slim ruby -rsecurerandom -e '
+    puts "APP_PORT=3210"
+    puts "DB_PASSWORD=#{SecureRandom.hex(24)}"
+    puts "APP_EMAIL=owner@example.test"
+    puts "APP_PASSWORD=#{SecureRandom.urlsafe_base64(18)}"
+    puts "SECRET_KEY_BASE=#{SecureRandom.hex(64)}"
+    %w[PRIMARY_KEY DETERMINISTIC_KEY KEY_DERIVATION_SALT].each { |key| puts "AR_ENCRYPTION_#{key}=#{SecureRandom.hex(32)}" }
+    puts "OPENAI_API_KEY="
+    puts "LLM_MODEL="
+  ' > .env
+fi
+docker compose build
+docker compose up -d db
+docker compose run --rm web bin/rails db:prepare app:bootstrap
+docker compose up -d web worker
+printf '%s\n' 'Ready. Login credentials are in .env. Open http://localhost:3210 (or your APP_PORT).'
