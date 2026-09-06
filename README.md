@@ -28,6 +28,8 @@ bin/setup
 
 初回に `.env` を自動生成し、ランダムなログインパスワード・暗号化鍵・DBパスワードを保存します。既存の `.env` は上書きしません。Web・ワーカー・PostgreSQLをビルドしてDBを準備し、初期アカウントを作成します。
 
+既存のPostgreSQLボリュームがある場合も、`bin/setup` が `.env` のDBパスワードをDBユーザーへ同期してから準備処理を行います。DBボリューム内のデータは削除しません。
+
 - URL：http://localhost:3210
 - 初期メール：`owner@example.test`（`.env` の `APP_EMAIL`）
 - 初期パスワード：`.env` の `APP_PASSWORD`

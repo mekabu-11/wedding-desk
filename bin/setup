@@ -16,6 +16,16 @@ if [ ! -f .env ]; then
 fi
 docker compose build
 docker compose up -d db
+
+# The volume may have been initialized before .env was generated. Keep the
+# database role password in sync so db:prepare can connect in that case too.
+db_password="$(sed -n 's/^DB_PASSWORD=//p' .env)"
+if [ -n "$db_password" ]; then
+  escaped_db_password="$(printf '%s' "$db_password" | sed "s/'/''/g")"
+  printf "ALTER ROLE wedding PASSWORD '%s';\n" "$escaped_db_password" |
+    docker compose exec -T db psql -U wedding -d postgres -v ON_ERROR_STOP=1 >/dev/null
+fi
+
 docker compose run --rm web bin/rails db:prepare app:bootstrap
 docker compose up -d web worker
 printf '%s\n' 'Ready. Login credentials are in .env. Open http://localhost:3210 (or your APP_PORT).'
