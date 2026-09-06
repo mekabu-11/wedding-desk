@@ -1,0 +1,12 @@
+<%= link_to "← やること", tasks_path, class: "back-link" %>
+<header class="page-heading"><div><h1>タスクを取り込む</h1><p>移行用JSONから、開始日・期限・状態・メモを取り込みます。</p></div></header>
+<section class="surface narrow">
+<p class="callout">Excelから準備した「import_candidates.json」を選んでください。取り込むのはタスクのみです。ゲスト・収支・BGMはこの操作では登録されません。Excelファイルを直接選ぶ機能は未対応です。</p>
+<%= form_with url: task_imports_path, multipart: true, class: "form-stack" do |f| %>
+<div class="field"><%= f.label :file, "移行用JSON（2MB以下・500件まで）" %><%= f.file_field :file, accept: '.json,application/json', required: true %></div>
+<%= f.submit "内容を確認する", class: "button primary" %>
+<% end %></section>
+<section class="import-history"><h2>最近の取り込み</h2>
+<% if @imports.empty? %><p class="muted">取り込み履歴はまだありません。</p><% end %>
+<% @imports.each do |batch| %><p><%= link_to "#{batch.created_at.in_time_zone.strftime('%Y/%m/%d %H:%M')} · #{batch.rows.size}件 · #{batch.status == 'committed' ? '登録済み' : '確認待ち'}", task_import_path(batch) %></p><% end %>
+</section>

@@ -1,1 +1,13 @@
-<header class="page-heading"><div><p class="eyebrow">ONE THING AT A TIME</p><h1>やること</h1><p>確認したタスクを、期限の近い順に。</p></div><%= link_to "資料を確認する →", documents_path, class: "button secondary" %></header><nav class="tabs" aria-label="状態で絞り込み"><%= link_to "これから", tasks_path, class: @status.nil? ? 'selected' : '' %><% Task::STATUSES.each do |key,label| %><%= link_to label, tasks_path(status: key), class: @status == key ? 'selected' : '' %><% end %></nav><section class="surface list-surface"><% if @tasks.empty? %><div class="empty-state"><span class="empty-symbol">✓</span><h2>該当するタスクはありません</h2><p>資料の候補を確認すると、ここに追加されます。</p><%= link_to "資料を見る", documents_path, class: "button secondary" %></div><% end %><% @tasks.each do |task| %><%= render "row", task: task %><% end %></section><%= render "shared/pagination", total: @total_count, page: @page %>
+<header class="page-heading"><div><h1>やること</h1><p>準備を追加して、期限の近い順に進めましょう。</p></div><div class="task-actions"><%= link_to "データを取り込む", new_task_import_path, class: "button secondary" %><%= link_to "タスクを追加", new_task_path, class: "button primary" %></div></header>
+<%= form_with url: tasks_path, method: :get, class: "task-filters surface" do |f| %>
+<div class="field"><%= f.label :status, "状態" %><%= f.select :status, [['これから', '']] + Task::STATUSES.map { |k,v| [v,k] }, selected: @status %></div>
+<div class="field"><%= f.label :assignee, "担当" %><%= f.select :assignee, [['全員', '']] + Task::ASSIGNEES.map { |k,v| [v,k] }, selected: @assignee %></div>
+<div class="field"><%= f.label :period, "期間" %><%= f.select :period, [['すべて', ''], ['今週やること', 'week'], ['期限超過', 'overdue']], selected: @period %></div>
+<%= f.submit "絞り込む", class: "button secondary" %>
+<% end %>
+<p class="muted task-result-count"><%= @total_count %>件<%= ' · 今週に期間が重なるタスク。開始日なしは今週期限のものを表示。' if @period == 'week' %></p>
+<section class="surface list-surface">
+<% if @tasks.empty? %><div class="empty-state"><h2>該当するタスクはありません</h2><p>タスクを追加するか、絞り込み条件を変更してください。</p></div><% end %>
+<% @tasks.each do |task| %><%= render "row", task: task %><% end %>
+</section>
+<%= render "shared/pagination", total: @total_count, page: @page %>

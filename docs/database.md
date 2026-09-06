@@ -1,5 +1,13 @@
 # データモデルと整合性
 
+## タスク準備管理の追加（2026-09-06）
+
+Taskのcandidate_idはnullable化した。origin=aiでは従来どおり必須（DB制約とモデル検証）、manual/importではAI候補不要。starts_on、source_key、暗号化したsource_detailsを追加。同じWeddingとsource_keyに一意制約を設ける。
+
+TaskImportはWeddingに所属し、暗号化したrowsとdigest、pending/committed、追加/スキップ件数を持つ。確認時はバッチとWeddingをロックし、タスク追加と結果を一括コミットする。ゲスト等の非タスク行は保存しない。本文および元ファイル名等の出典をSQLで直接平文投入しない。
+
+以下は既存AIフローの構成。
+
 PostgreSQLを使用する。通常データとSolid Queueのテーブルは別データベース。同じPostgreSQLコンテナ上で動作する。
 
 ```text

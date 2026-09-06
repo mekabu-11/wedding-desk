@@ -1,2 +1,14 @@
-<%= link_to "← やること", tasks_path, class: "back-link" %><header class="page-heading"><div><p class="eyebrow">TASK DETAILS</p><h1>タスクを確認する</h1><p>期限や担当を調整して、ひとつずつ進めましょう。</p></div></header><div class="review-grid"><section class="surface"><%= render "shared/errors", record: @task %><%= form_with model: @task, class: "form-stack" do |f| %>
-<%= f.hidden_field :lock_version %><div class="field"><%= f.label :title, "やること" %><%= f.text_field :title, required: true, maxlength: 150 %></div><div class="form-grid"><div class="field"><%= f.label :status, "状態" %><%= f.select :status, Task::STATUSES.map { |k,v| [v,k] } %></div><div class="field"><%= f.label :assignee, "担当" %><%= f.select :assignee, Task::ASSIGNEES.map { |k,v| [v,k] } %></div></div><div class="field"><%= f.label :due_on, "期限日" %><%= f.date_field :due_on %></div><div class="field"><%= f.label :due_at, "時刻付き期限（日本時間）" %><%= f.datetime_local_field :due_at %><small>期限日か時刻付き期限の片方だけを入力してください。</small></div><div class="field"><%= f.label :description, "詳細" %><%= f.text_area :description, rows: 4 %></div><div class="field"><%= f.label :category, "カテゴリ" %><%= f.select :category, Task::CATEGORIES.map { |k,v| [v,k] } %></div><%= f.submit "変更を保存する", class: "button primary" %><% end %></section><aside><p class="eyebrow">ORIGINAL SOURCE</p><h2>このタスクの根拠</h2><blockquote><%= @task.candidate.evidence['quote'] %></blockquote><%= link_to @task.candidate.document.title + ' →', document_path(@task.candidate.document), class: "text-link" %><p class="micro">手動で変更した内容は、再解析で上書きされません。</p></aside></div>
+<%= link_to "← やること", tasks_path, class: "back-link" %>
+<header class="page-heading"><div><h1>タスクを確認する</h1><p>期限や担当を調整して、ひとつずつ進めましょう。</p></div></header>
+<div class="review-grid">
+<section class="surface"><%= render "form", task: @task %></section>
+<aside><h2>このタスクの出典</h2>
+<% if @task.candidate %>
+<blockquote><%= @task.candidate.evidence['quote'] %></blockquote>
+<%= link_to @task.candidate.document.title + ' →', document_path(@task.candidate.document), class: "text-link" %>
+<% elsif @task.origin == 'import' %>
+<% source = @task.source_details || {} %>
+<blockquote><%= source['source_file'] %><br><%= source['source_sheet'] %>・<%= source['source_row'] %>行目<br>元の担当：<%= source['assignee_raw'].presence || '空欄' %><br>元のカテゴリ：<%= source['category_raw'].presence || '空欄' %></blockquote>
+<% else %><p class="muted">手動で追加したタスクです。</p><% end %>
+<p class="micro">手動で変更した内容は、再解析や同じ出典の再取り込みで上書きされません。</p>
+</aside></div>

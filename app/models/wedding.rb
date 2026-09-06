@@ -2,6 +2,7 @@ class Wedding < ApplicationRecord
   belongs_to :user
   has_many :documents, dependent: :destroy
   has_many :tasks, dependent: :destroy
+  has_many :task_imports, dependent: :destroy
   validate :valid_wedding_date
   def valid_wedding_date
     if wedding_date_before_type_cast.present? && wedding_date.nil?

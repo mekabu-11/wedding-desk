@@ -1,0 +1,25 @@
+<%= link_to "← データの取り込み", new_task_import_path, class: "back-link" %>
+<header class="page-heading"><div><h1>取り込み内容を確認</h1><p><%= @batch.rows.size %>件中、登録済みの出典は<%= @existing_keys.size %>件です。</p></div></header>
+<% if @batch.status == 'committed' %>
+<div class="flash"><%= @batch.imported_count %>件を追加しました。登録済み<%= @batch.skipped_count %>件は変更していません。</div>
+<%= link_to "やることを見る", tasks_path, class: "button primary" %>
+<% else %>
+<section class="surface narrow"><h2>元の担当を割り当てる</h2>
+<p class="muted">自分・パートナーの対応を確認してください。元の担当名もタスクの出典に残ります。</p>
+<%= form_with url: task_import_path(@batch), method: :patch, class: "form-stack import-mapping" do %>
+<% @labels.each_with_index do |label, i| %>
+<div class="field"><%= label_tag "mapping_#{i}", label.presence || '担当名なし' %><%= select_tag "mapping[#{i}]", options_for_select([['選択してください', '']] + Task::ASSIGNEES.map { |k,v| [v,k] }, label == '共同' ? 'both' : ''), id: "mapping_#{i}", required: true %></div>
+<% end %>
+<label class="check-label"><%= check_box_tag :confirmed, '1', false, required: true %><span>下のタスク・期限・状態を確認しました。同じ出典の登録済みタスクは変更しません。</span></label>
+<%= submit_tag "確認したタスクを登録する", class: "button primary" %>
+<% end %></section>
+<% end %>
+<section class="import-preview"><h2>タスク一覧</h2>
+<% @batch.rows.each do |row| %>
+<article class="surface import-row">
+<h3><%= row['title'] %></h3>
+<p class="muted"><%= row['source_sheet'] %>・<%= row['source_row'] %>行目 · <%= row['assignee_raw'] %> · <%= row['status_raw'] %><%= ' · 登録済み' if @existing_keys.include?(row['source_key']) %></p>
+<p>開始：<%= row['starts_on'].presence || '未設定' %> ／ 期限：<%= row['due_on'].presence || '未設定' %></p>
+<p>カテゴリ：<%= Task::CATEGORIES[row['category']] %>（元：<%= row['category_raw'] %>）</p>
+<% if row['notes'].present? %><p class="import-notes"><%= row['notes'] %></p><% end %>
+</article><% end %></section>

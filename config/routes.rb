@@ -7,6 +7,7 @@ Rails.application.routes.draw do
     post :sample, on: :collection
     resources :candidates, only: :update
   end
-  resources :tasks, only: %i[index edit update]
+  resources :tasks, only: %i[index new create edit update]
+  resources :task_imports, only: %i[new create show update]
   root "dashboard#show"
 end

@@ -1,0 +1,17 @@
+<%= render "shared/errors", record: task %>
+<%= form_with model: task, class: "form-stack" do |f| %>
+<%= f.hidden_field :lock_version %>
+<div class="field"><%= f.label :title, "やること" %><%= f.text_field :title, required: true, maxlength: 150 %></div>
+<div class="form-grid">
+<div class="field"><%= f.label :status, "状態" %><%= f.select :status, Task::STATUSES.map { |k,v| [v,k] } %></div>
+<div class="field"><%= f.label :assignee, "担当" %><%= f.select :assignee, Task::ASSIGNEES.map { |k,v| [v,k] } %></div>
+</div>
+<div class="form-grid">
+<div class="field"><%= f.label :starts_on, "開始日" %><%= f.date_field :starts_on %></div>
+<div class="field"><%= f.label :due_on, "期限日" %><%= f.date_field :due_on %></div>
+</div>
+<div class="field"><%= f.label :due_at, "時刻付き期限（日本時間）" %><%= f.datetime_local_field :due_at %><small>期限日か時刻付き期限の片方だけを入力してください。</small></div>
+<div class="field"><%= f.label :description, "詳細・メモ" %><%= f.text_area :description, rows: 5, maxlength: 2000 %></div>
+<div class="field"><%= f.label :category, "カテゴリ" %><%= f.select :category, Task::CATEGORIES.map { |k,v| [v,k] } %></div>
+<%= f.submit task.persisted? ? "変更を保存する" : "タスクを追加する", class: "button primary" %>
+<% end %>
