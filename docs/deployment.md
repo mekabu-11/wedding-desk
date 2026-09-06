@@ -8,7 +8,7 @@
 - worker：Solid Queue（独立プロセス）
 - db：PostgreSQL 17、named volume、ホスト公開なし
 
-Compose名は `wedding-desk`。他アプリのコンテナ・DB・ネットワークを操作しない。
+Compose名は `wedding-desk-github`。他アプリのコンテナ・DB・ネットワークを操作しない。
 
 暗号化鍵、SECRET_KEY_BASE、DBパスワードを `.env` に保存する。`.env` はGitおよびDocker build contextから除外する。Composeの展開済み設定には秘密値が含まれるため、その出力を公開しない。
 

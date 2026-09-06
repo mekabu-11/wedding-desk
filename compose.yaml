@@ -1,4 +1,4 @@
-name: wedding-desk
+name: wedding-desk-github
 x-app: &app
   build: .
   env_file:
