@@ -104,12 +104,14 @@ class AnalysisTest < ActiveSupport::TestCase
     doc = sample_document
     run = analyze_sample(doc)
     candidate = doc.candidates.first
-    ReviewCandidate.call(candidate, decision: "accept", attributes: acceptance_attributes(candidate))
+    task = ReviewCandidate.call(candidate, decision: "accept", attributes: acceptance_attributes(candidate))
     id = run.id
     doc.destroy!
     AnalyzeDocumentJob.perform_now(id)
     assert_equal 0, Document.count
-    assert_equal 0, Task.count
+    assert_equal 1, Task.count
+    assert_nil task.reload.candidate
+    assert task.source_details["source_deleted_at"].present?
     assert_equal 0, Candidate.count
   end
 

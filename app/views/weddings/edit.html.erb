@@ -1,3 +1,21 @@
 <header class="page-heading"><div><p class="eyebrow">SETTINGS</p><h1>結婚式の設定</h1><p>準備の基本情報をまとめておきましょう。</p></div></header><section class="surface narrow"><%= render "form" %></section>
 
+<section class="surface narrow" style="margin-top: 24px">
+  <div class="section-heading"><div><p class="eyebrow">SHARED ACCESS</p><h2>ふたりで共有</h2></div><span class="badge muted"><%= current_wedding.memberships.count %>/2人</span></div>
+  <% current_wedding.memberships.includes(:user).order(:id).each do |membership| %>
+    <p><strong><%= membership.user.email %></strong> <span class="micro"><%= Membership::ROLES[membership.role] %></span></p>
+  <% end %>
+  <% if current_membership&.owner? && current_wedding.memberships.count < 2 %>
+    <p class="muted">パートナー用のログインを追加します。登録したメールアドレスと初期パスワードを本人へ共有してください。</p>
+    <%= form_with scope: :member, url: membership_path, class: "form-stack" do |f| %>
+      <div class="field"><%= f.label :email, "パートナーのメールアドレス" %><%= f.email_field :email, required: true, autocomplete: "off" %></div>
+      <div class="field"><%= f.label :password, "初期パスワード（12文字以上）" %><%= f.password_field :password, required: true, minlength: 12, autocomplete: "new-password" %></div>
+      <div class="field"><%= f.label :password_confirmation, "初期パスワード（確認）" %><%= f.password_field :password_confirmation, required: true, minlength: 12, autocomplete: "new-password" %></div>
+      <%= f.submit "共有アカウントを追加", class: "button secondary" %>
+    <% end %>
+  <% elsif current_wedding.memberships.count >= 2 %>
+    <p class="muted">この結婚式は2人で共有されています。</p>
+  <% end %>
+</section>
+
 <div class="document-actions"><%= button_to "ログアウト", session_path, method: :delete, class: "button secondary" %></div>

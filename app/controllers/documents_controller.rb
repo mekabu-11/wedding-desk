@@ -47,7 +47,7 @@ class DocumentsController < ApplicationController
       return redirect_to @document, alert: "削除の影響を確認してチェックしてください。"
     end
     @document.with_lock { @document.destroy! }
-    redirect_to documents_path, notice: "資料と、この資料から作成した候補・タスクを削除しました。", status: :see_other
+    redirect_to documents_path, notice: "資料を削除しました。登録済みのタスクは残ります。", status: :see_other
   end
   private
   def start_analysis

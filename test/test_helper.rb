@@ -10,7 +10,9 @@ class ActiveSupport::TestCase
     User.create!(email: "owner-#{SecureRandom.hex(5)}@example.test", password: "test-password-12345")
   end
   def create_wedding(user = create_owner)
-    user.create_wedding!(name: "テストの結婚式", wedding_date: Date.new(2026, 10, 25))
+    wedding = Wedding.create!(name: "テストの結婚式", wedding_date: Date.new(2026, 10, 25))
+    wedding.memberships.create!(user: user, role: "owner")
+    wedding
   end
   def sample_document(wedding = create_wedding)
     wedding.documents.create!(title: "サンプル", source_type: "email", direction: "incoming", original_text: Analysis::Sample::TEXT, sample: true)
@@ -34,8 +36,8 @@ class ActiveSupport::TestCase
 end
 
 class ActionDispatch::IntegrationTest
-  def sign_in(user)
-    post session_path, params: { email: user.email, password: "test-password-12345" }
+  def sign_in(user, password: "test-password-12345")
+    post session_path, params: { email: user.email, password: password }
     assert_response :redirect
   end
 end

@@ -1,5 +1,6 @@
 class Wedding < ApplicationRecord
-  belongs_to :user
+  has_many :memberships, dependent: :destroy, inverse_of: :wedding
+  has_many :users, through: :memberships
   has_many :documents, dependent: :destroy
   has_many :tasks, dependent: :destroy
   has_many :task_imports, dependent: :destroy

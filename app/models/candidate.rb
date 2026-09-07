@@ -1,7 +1,7 @@
 class Candidate < ApplicationRecord
   belongs_to :document
   belongs_to :analysis_run
-  has_one :task, dependent: :destroy
+  has_one :task, dependent: :nullify
   encrypts :payload
   encrypts :evidence
   serialize :payload, coder: JSON

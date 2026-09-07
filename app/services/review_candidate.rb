@@ -9,7 +9,16 @@ class ReviewCandidate
         return nil
       end
       raise ArgumentError, "invalid_decision" unless decision == "accept"
-      task = document.wedding.tasks.create!(attributes.merge(candidate: candidate, status: "todo"))
+      source_details = {
+        "source_type" => document.source_type,
+        "source_title" => document.title,
+        "source_occurred_at" => document.occurred_at&.iso8601
+      }
+      task = document.wedding.tasks.create!(attributes.merge(
+        candidate: candidate,
+        status: "todo",
+        source_details: source_details
+      ))
       candidate.update!(review_status: "accepted", reviewed_at: Time.current)
       task
     end

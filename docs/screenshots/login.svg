@@ -11,7 +11,7 @@
   <text x="140" y="760" fill="#596a61" font-family="Arial, sans-serif" font-size="13">A LITTLE LESS TO REMEMBER</text>
   <text x="820" y="235" fill="#596a61" font-family="Arial, sans-serif" font-size="12" letter-spacing="3">WELCOME BACK</text>
   <text x="820" y="285" fill="#263d37" font-family="Arial, sans-serif" font-size="30" font-weight="600">準備の続きをはじめる</text>
-  <text x="820" y="322" fill="#596a61" font-family="Arial, sans-serif" font-size="15">あなた専用のワークスペースにログイン。</text>
+  <text x="820" y="322" fill="#596a61" font-family="Arial, sans-serif" font-size="15">ふたりのワークスペースにログイン。</text>
   <text x="820" y="390" fill="#263d37" font-family="Arial, sans-serif" font-size="14" font-weight="600">メールアドレス</text>
   <rect x="820" y="410" width="450" height="55" rx="7" fill="#fff" stroke="#d7dfd7" stroke-width="2"/>
   <text x="840" y="445" fill="#9aa69e" font-family="Arial, sans-serif" font-size="14">owner@example.com</text>

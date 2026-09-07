@@ -5,6 +5,7 @@ class Document < ApplicationRecord
   belongs_to :wedding
   has_many :analysis_runs, dependent: :destroy
   has_many :candidates, dependent: :destroy
+  before_destroy :detach_tasks_and_keep_source, prepend: true
   encrypts :original_text
   before_validation :prepare_content, on: :create
   validates :title, presence: true, length: { maximum: 150 }
@@ -36,6 +37,20 @@ class Document < ApplicationRecord
     !run || %w[failed completed].include?(run.status) || run.updated_at < 5.minutes.ago
   end
   private
+
+  def detach_tasks_and_keep_source
+    candidates.includes(:task).filter_map(&:task).each do |task|
+      details = task.source_details.is_a?(Hash) ? task.source_details.deep_dup : {}
+      details.merge!(
+        "source_type" => source_type,
+        "source_title" => title,
+        "source_occurred_at" => occurred_at&.iso8601,
+        "source_deleted_at" => Time.current.iso8601
+      )
+      task.update!(candidate: nil, source_details: details)
+    end
+  end
+
   def prepare_content
     self.original_text = original_text.to_s.gsub("\r\n", "\n").strip
     self.title = original_text.lines.first.to_s.strip.truncate(70) if title.blank?

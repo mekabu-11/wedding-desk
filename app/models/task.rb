@@ -15,7 +15,6 @@ class Task < ApplicationRecord
   validate :valid_dates
   validate :same_wedding
   validates :origin, inclusion: { in: %w[ai manual import] }
-  validates :candidate, presence: true, if: -> { origin == "ai" }
   validates :source_key, presence: true, if: -> { origin == "import" }
   scope :open_items, -> { where(status: %w[todo doing]) }
   scope :by_deadline, -> { order(Arel.sql("COALESCE(due_at, due_on::timestamp AT TIME ZONE 'Asia/Tokyo') ASC NULLS LAST"), :id) }

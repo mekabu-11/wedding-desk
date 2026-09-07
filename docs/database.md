@@ -11,17 +11,18 @@ TaskImportはWeddingに所属し、暗号化したrowsとdigest、pending/commit
 PostgreSQLを使用する。通常データとSolid Queueのテーブルは別データベース。同じPostgreSQLコンテナ上で動作する。
 
 ```text
-User ─1:1─ Wedding ─1:N─ Document ─1:N─ AnalysisRun
-                    │       └─1:N─ Candidate ─1:0..1─ Task
-                    └──────────────────────────────┘
+User ─1:1─ Membership ─N:1─ Wedding ─1:N─ Document ─1:N─ AnalysisRun
+                                  │       └─1:N─ Candidate ─1:0..1─ Task
+                                  └──────────────────────────────┘
 ```
 
 - `users`：メール一意、bcryptパスワードハッシュ。公開登録なし。
-- `weddings`：利用者ごとに最大1件。予算は整数円。
+- `memberships`：利用者と結婚式を関連付ける。利用者は1結婚式、結婚式は最大2人。owner/editorの役割を持つ。
+- `weddings`：2つのログインから共有できる。予算は整数円。
 - `documents`：原文、連絡日時、情報元、送受信方向。Wedding＋本文ハッシュが一意。
 - `analysis_runs`：解析の状態・使用プロバイダー・モデル/プロンプト/スキーマ版・エラーコード・試行数・実行トークン。
 - `candidates`：JSON化した抽出候補と原文引用・文字位置。Document＋fingerprintが一意。引用位置はUnicode文字位置。
-- `tasks`：承認時の内容。Candidateごとに最大1件。楽観ロックで古い画面からの上書きを防止。
+- `tasks`：承認時の内容。Candidateごとに最大1件。資料削除後はCandidate参照を外してタスクと暗号化した出典概要を保持する。楽観ロックで古い画面からの上書きを防止。
 
 本文・候補payload・引用・要約・タスク本文をActive Record Encryptionで暗号化する。検索用の本文ハッシュは暗号化本文とは別に保存する。DB volume自体の暗号化はホスト/クラウド側のディスク暗号化に依存する。
 
@@ -39,4 +40,4 @@ User ─1:1─ Wedding ─1:N─ Document ─1:N─ AnalysisRun
 
 ## 削除
 
-Document削除に伴いRun、Candidate、Taskを削除する。バックアップや外部AIサービスに既に渡ったデータの削除とは別。運用環境のバックアップ保持期間は配置前に決める。
+Document削除に伴いRunとCandidateを削除する。承認済みTaskは削除せずCandidate参照を外し、元資料が削除された日時と出典概要を保持する。バックアップや外部AIサービスに既に渡ったデータの削除とは別。運用環境のバックアップ保持期間は配置前に決める。

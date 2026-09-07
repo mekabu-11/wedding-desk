@@ -27,8 +27,53 @@ class WorkflowTest < ActionDispatch::IntegrationTest
     assert_equal "done", task.reload.status
     delete document_path(doc), params: { confirm_delete: "1" }
     assert_redirected_to documents_path
-    assert_equal 0, owner.wedding.tasks.count
+    assert_equal 1, owner.wedding.tasks.count
     assert_equal 0, owner.wedding.documents.count
+    assert_nil task.reload.candidate
+    assert task.source_details["source_deleted_at"].present?
+    get edit_task_path(task)
+    assert_response :success
+    assert_includes response.body, "元資料は削除済みです"
+  end
+
+  test "owner can add a second login that shares the same wedding" do
+    owner = create_owner
+    wedding = create_wedding(owner)
+    wedding.tasks.create!(origin: "manual", title: "共有されるタスク")
+    sign_in(owner)
+
+    post membership_path, params: { member: {
+      email: "partner@example.test",
+      password: "partner-password-12345",
+      password_confirmation: "partner-password-12345"
+    } }
+    assert_redirected_to edit_wedding_path
+    partner = User.find_by!(email: "partner@example.test")
+    assert_equal wedding, partner.wedding
+    assert_equal 2, wedding.memberships.count
+
+    delete session_path
+    sign_in(partner, password: "partner-password-12345")
+    get tasks_path
+    assert_response :success
+    assert_includes response.body, "共有されるタスク"
+  end
+
+  test "only the owner can add a member and a wedding is limited to two users" do
+    owner = create_owner
+    wedding = create_wedding(owner)
+    partner = User.create!(email: "partner-guard@example.test", password: "partner-password-12345")
+    wedding.memberships.create!(user: partner, role: "editor")
+
+    sign_in(partner, password: "partner-password-12345")
+    post membership_path, params: { member: {
+      email: "third@example.test",
+      password: "third-password-12345",
+      password_confirmation: "third-password-12345"
+    } }
+    assert_redirected_to edit_wedding_path
+    assert_nil User.find_by(email: "third@example.test")
+    assert_equal 2, wedding.memberships.count
   end
 
   test "another owner's documents candidates tasks and retries are inaccessible" do

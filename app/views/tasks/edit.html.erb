@@ -9,6 +9,9 @@
 <% elsif @task.origin == 'import' %>
 <% source = @task.source_details || {} %>
 <blockquote><%= source['source_file'] %><br><%= source['source_sheet'] %>・<%= source['source_row'] %>行目<br>元の担当：<%= source['assignee_raw'].presence || '空欄' %><br>元のカテゴリ：<%= source['category_raw'].presence || '空欄' %></blockquote>
+<% elsif @task.origin == 'ai' %>
+<% source = @task.source_details || {} %>
+<blockquote>元資料は削除済みです。<% if source['source_title'].present? %><br>資料名：<%= source['source_title'] %><% end %><% if source['source_occurred_at'].present? %><br>資料日時：<%= l Time.zone.parse(source['source_occurred_at']), format: :default %><% end %></blockquote>
 <% else %><p class="muted">手動で追加したタスクです。</p><% end %>
 <p class="micro">手動で変更した内容は、再解析や同じ出典の再取り込みで上書きされません。</p>
 </aside></div>

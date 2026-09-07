@@ -8,6 +8,7 @@ class ConcurrencyTest < ActiveSupport::TestCase
     @candidate = @doc.candidates.first
   end
   teardown do
+    @doc.wedding.destroy! if @doc&.wedding&.persisted?
     @owner.destroy!
   end
 

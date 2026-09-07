@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_06_000003) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_07_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -62,6 +62,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_06_000003) do
     t.bigint "wedding_id", null: false
     t.index ["wedding_id", "content_hash"], name: "index_documents_on_wedding_id_and_content_hash", unique: true
     t.index ["wedding_id"], name: "index_documents_on_wedding_id"
+  end
+
+  create_table "memberships", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "role", default: "editor", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.bigint "wedding_id", null: false
+    t.index ["user_id"], name: "index_memberships_on_user_id", unique: true
+    t.index ["wedding_id", "user_id"], name: "index_memberships_on_wedding_id_and_user_id", unique: true
+    t.index ["wedding_id"], name: "index_memberships_on_wedding_id"
+    t.check_constraint "role::text = ANY (ARRAY['owner'::character varying, 'editor'::character varying]::text[])", name: "memberships_valid_role"
   end
 
   create_table "solid_queue_batch_executions", force: :cascade do |t|
@@ -252,7 +264,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_06_000003) do
     t.index ["wedding_id", "source_key"], name: "index_tasks_on_wedding_id_and_source_key", unique: true
     t.index ["wedding_id", "status", "due_on"], name: "index_tasks_on_wedding_id_and_status_and_due_on"
     t.index ["wedding_id"], name: "index_tasks_on_wedding_id"
-    t.check_constraint "origin::text <> 'ai'::text OR candidate_id IS NOT NULL", name: "ai_tasks_require_candidate"
     t.check_constraint "origin::text <> 'import'::text OR source_key IS NOT NULL", name: "import_tasks_require_source"
     t.check_constraint "origin::text = ANY (ARRAY['ai'::character varying, 'manual'::character varying, 'import'::character varying]::text[])", name: "tasks_valid_origin"
     t.check_constraint "status::text = ANY (ARRAY['todo'::character varying::text, 'doing'::character varying::text, 'done'::character varying::text, 'cancelled'::character varying::text])", name: "tasks_valid_status"
@@ -273,16 +284,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_06_000003) do
     t.string "partner_name"
     t.string "self_name"
     t.datetime "updated_at", null: false
-    t.bigint "user_id", null: false
     t.string "venue_name"
     t.date "wedding_date"
-    t.index ["user_id"], name: "index_weddings_on_user_id", unique: true
   end
 
   add_foreign_key "analysis_runs", "documents"
   add_foreign_key "candidates", "analysis_runs"
   add_foreign_key "candidates", "documents"
   add_foreign_key "documents", "weddings"
+  add_foreign_key "memberships", "users"
+  add_foreign_key "memberships", "weddings"
   add_foreign_key "solid_queue_batch_executions", "solid_queue_batches", column: "batch_id", on_delete: :cascade
   add_foreign_key "solid_queue_batch_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_blocked_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
@@ -294,5 +305,4 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_06_000003) do
   add_foreign_key "task_imports", "weddings"
   add_foreign_key "tasks", "candidates"
   add_foreign_key "tasks", "weddings"
-  add_foreign_key "weddings", "users"
 end
