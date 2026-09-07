@@ -20,6 +20,7 @@
     </nav>
     <div class="sidebar-bottom">
       <div class="wedding-mini"><span class="eyebrow">OUR WEDDING</span><strong><%= current_wedding.name %></strong><span><%= current_wedding.wedding_date&.strftime("%Y . %m . %d") || "挙式日未設定" %></span></div>
+      <%= nav_link("ヘルプ", help_path, controller_name == "help") %>
       <%= nav_link("結婚式の設定", edit_wedding_path, controller_name == "weddings") %>
       <%= button_to "ログアウト", session_path, method: :delete, class: "logout" %>
     </div>
