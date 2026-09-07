@@ -4,6 +4,14 @@ class Wedding < ApplicationRecord
   has_many :documents, dependent: :destroy
   has_many :tasks, dependent: :destroy
   has_many :task_imports, dependent: :destroy
+  has_many :seating_tables, dependent: :destroy
+  has_many :cash_gift_rules, dependent: :destroy
+  has_many :households, dependent: :destroy
+  has_many :guests, dependent: :destroy
+  has_many :budget_items, dependent: :destroy
+  has_many :money_movements, dependent: :destroy
+  has_many :gift_sets, dependent: :destroy
+  has_many :gift_assignments, dependent: :destroy
   validate :valid_wedding_date
   def valid_wedding_date
     if wedding_date_before_type_cast.present? && wedding_date.nil?

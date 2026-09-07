@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_07_000001) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_08_000005) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -33,6 +33,35 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_07_000001) do
     t.index ["document_id"], name: "index_analysis_runs_on_document_id"
   end
 
+  create_table "budget_items", force: :cascade do |t|
+    t.bigint "amount_yen"
+    t.string "calculation_mode", default: "manual", null: false
+    t.string "category", default: "other", null: false
+    t.string "certainty", default: "estimate", null: false
+    t.datetime "created_at", null: false
+    t.string "direction", null: false
+    t.string "inclusion", default: "included", null: false
+    t.integer "lock_version", default: 0, null: false
+    t.integer "manual_quantity"
+    t.string "quantity_basis"
+    t.string "rounding", default: "floor", null: false
+    t.bigint "source_id"
+    t.string "source_kind", default: "manual", null: false
+    t.string "tax_basis", default: "unknown", null: false
+    t.decimal "tax_rate", precision: 5, scale: 2
+    t.text "title", null: false
+    t.bigint "unit_price"
+    t.datetime "updated_at", null: false
+    t.bigint "wedding_id", null: false
+    t.index ["wedding_id", "direction", "inclusion"], name: "index_budget_items_on_wedding_id_and_direction_and_inclusion"
+    t.index ["wedding_id", "source_kind", "source_id"], name: "index_budget_items_on_wedding_and_source", unique: true, where: "(((source_kind)::text <> 'manual'::text) AND (source_id IS NOT NULL))"
+    t.index ["wedding_id"], name: "index_budget_items_on_wedding_id"
+    t.check_constraint "amount_yen IS NULL OR amount_yen >= 0", name: "budget_items_amount_non_negative"
+    t.check_constraint "source_kind::text = 'manual'::text OR source_id IS NOT NULL", name: "budget_items_source_required"
+    t.check_constraint "tax_basis::text <> 'exclusive'::text OR calculation_mode::text <> 'quantity'::text OR tax_rate IS NOT NULL", name: "budget_items_exclusive_tax_rate_required"
+    t.check_constraint "tax_rate IS NULL OR tax_rate >= 0::numeric AND tax_rate <= 100::numeric", name: "budget_items_tax_rate_range"
+  end
+
   create_table "candidates", force: :cascade do |t|
     t.bigint "analysis_run_id", null: false
     t.datetime "created_at", null: false
@@ -47,6 +76,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_07_000001) do
     t.index ["document_id", "fingerprint"], name: "index_candidates_on_document_id_and_fingerprint", unique: true
     t.index ["document_id"], name: "index_candidates_on_document_id"
     t.check_constraint "review_status::text = ANY (ARRAY['pending'::character varying::text, 'accepted'::character varying::text, 'rejected'::character varying::text])", name: "candidates_valid_status"
+  end
+
+  create_table "cash_gift_rules", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "default_amount_yen", null: false
+    t.string "label", null: false
+    t.integer "lock_version", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.bigint "wedding_id", null: false
+    t.index ["wedding_id", "label"], name: "index_cash_gift_rules_on_wedding_id_and_label", unique: true
+    t.index ["wedding_id"], name: "index_cash_gift_rules_on_wedding_id"
+    t.check_constraint "default_amount_yen >= 0", name: "cash_gift_rules_amount_non_negative"
   end
 
   create_table "documents", force: :cascade do |t|
@@ -64,6 +105,92 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_07_000001) do
     t.index ["wedding_id"], name: "index_documents_on_wedding_id"
   end
 
+  create_table "gift_assignments", force: :cascade do |t|
+    t.bigint "budget_item_id"
+    t.datetime "created_at", null: false
+    t.bigint "gift_set_id", null: false
+    t.bigint "household_id", null: false
+    t.boolean "included", default: true, null: false
+    t.integer "lock_version", default: 0, null: false
+    t.text "notes"
+    t.integer "quantity", default: 1, null: false
+    t.datetime "updated_at", null: false
+    t.bigint "wedding_id", null: false
+    t.index ["budget_item_id"], name: "index_gift_assignments_on_budget_item_id", unique: true, where: "(budget_item_id IS NOT NULL)"
+    t.index ["gift_set_id"], name: "index_gift_assignments_on_gift_set_id"
+    t.index ["household_id"], name: "index_gift_assignments_on_household_id"
+    t.index ["wedding_id", "household_id"], name: "index_gift_assignments_on_wedding_id_and_household_id", unique: true
+    t.index ["wedding_id"], name: "index_gift_assignments_on_wedding_id"
+    t.check_constraint "quantity > 0", name: "gift_assignments_quantity_positive"
+  end
+
+  create_table "gift_set_items", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "gift_set_id", null: false
+    t.string "kind", default: "other", null: false
+    t.integer "lock_version", default: 0, null: false
+    t.string "name", null: false
+    t.string "rounding", default: "floor", null: false
+    t.string "tax_basis", default: "unknown", null: false
+    t.decimal "tax_rate", precision: 5, scale: 2
+    t.bigint "unit_price_yen", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.index ["gift_set_id"], name: "index_gift_set_items_on_gift_set_id"
+    t.check_constraint "rounding::text = ANY (ARRAY['floor'::character varying::text, 'round'::character varying::text, 'ceil'::character varying::text])", name: "gift_set_items_valid_rounding"
+    t.check_constraint "tax_basis::text <> 'exclusive'::text OR tax_rate IS NOT NULL", name: "gift_set_items_exclusive_tax_rate_required"
+    t.check_constraint "tax_rate IS NULL OR tax_rate >= 0::numeric AND tax_rate <= 100::numeric", name: "gift_set_items_tax_rate_range"
+  end
+
+  create_table "gift_sets", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "lock_version", default: 0, null: false
+    t.string "name", null: false
+    t.text "notes"
+    t.datetime "updated_at", null: false
+    t.bigint "wedding_id", null: false
+    t.index ["wedding_id", "name"], name: "index_gift_sets_on_wedding_id_and_name", unique: true
+    t.index ["wedding_id"], name: "index_gift_sets_on_wedding_id"
+  end
+
+  create_table "guests", force: :cascade do |t|
+    t.string "age_group", default: "adult", null: false
+    t.text "allergies"
+    t.string "attendance", default: "unanswered", null: false
+    t.datetime "created_at", null: false
+    t.string "gender"
+    t.bigint "household_id"
+    t.string "invitation_status"
+    t.integer "lock_version", default: 0, null: false
+    t.text "name", null: false
+    t.text "notes"
+    t.text "relationship"
+    t.text "roles"
+    t.bigint "seating_table_id"
+    t.string "side", default: "unknown", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "wedding_id", null: false
+    t.index ["household_id"], name: "index_guests_on_household_id"
+    t.index ["seating_table_id"], name: "index_guests_on_seating_table_id"
+    t.index ["wedding_id", "attendance"], name: "index_guests_on_wedding_id_and_attendance"
+    t.index ["wedding_id", "household_id"], name: "index_guests_on_wedding_id_and_household_id"
+    t.index ["wedding_id"], name: "index_guests_on_wedding_id"
+  end
+
+  create_table "households", force: :cascade do |t|
+    t.boolean "archived", default: false, null: false
+    t.bigint "cash_gift_rule_id"
+    t.string "code", null: false
+    t.datetime "created_at", null: false
+    t.integer "lock_version", default: 0, null: false
+    t.text "name", null: false
+    t.text "notes"
+    t.datetime "updated_at", null: false
+    t.bigint "wedding_id", null: false
+    t.index ["cash_gift_rule_id"], name: "index_households_on_cash_gift_rule_id"
+    t.index ["wedding_id", "code"], name: "index_households_on_wedding_id_and_code", unique: true
+    t.index ["wedding_id"], name: "index_households_on_wedding_id"
+  end
+
   create_table "memberships", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "role", default: "editor", null: false
@@ -73,7 +200,36 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_07_000001) do
     t.index ["user_id"], name: "index_memberships_on_user_id", unique: true
     t.index ["wedding_id", "user_id"], name: "index_memberships_on_wedding_id_and_user_id", unique: true
     t.index ["wedding_id"], name: "index_memberships_on_wedding_id"
-    t.check_constraint "role::text = ANY (ARRAY['owner'::character varying, 'editor'::character varying]::text[])", name: "memberships_valid_role"
+    t.check_constraint "role::text = ANY (ARRAY['owner'::character varying::text, 'editor'::character varying::text])", name: "memberships_valid_role"
+  end
+
+  create_table "money_movements", force: :cascade do |t|
+    t.bigint "amount_yen", null: false
+    t.bigint "budget_item_id", null: false
+    t.datetime "created_at", null: false
+    t.string "idempotency_key"
+    t.string "kind", null: false
+    t.integer "lock_version", default: 0, null: false
+    t.text "note"
+    t.date "occurred_on", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "wedding_id", null: false
+    t.index ["budget_item_id"], name: "index_money_movements_on_budget_item_id"
+    t.index ["wedding_id", "budget_item_id", "occurred_on"], name: "idx_on_wedding_id_budget_item_id_occurred_on_f7b7f90557"
+    t.index ["wedding_id", "idempotency_key"], name: "index_money_movements_on_wedding_id_and_idempotency_key", unique: true, where: "(idempotency_key IS NOT NULL)"
+    t.index ["wedding_id"], name: "index_money_movements_on_wedding_id"
+    t.check_constraint "amount_yen > 0", name: "money_movements_amount_positive"
+  end
+
+  create_table "seating_tables", force: :cascade do |t|
+    t.integer "capacity"
+    t.datetime "created_at", null: false
+    t.string "label", null: false
+    t.integer "lock_version", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.bigint "wedding_id", null: false
+    t.index ["wedding_id", "label"], name: "index_seating_tables_on_wedding_id_and_label", unique: true
+    t.index ["wedding_id"], name: "index_seating_tables_on_wedding_id"
   end
 
   create_table "solid_queue_batch_executions", force: :cascade do |t|
@@ -239,7 +395,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_07_000001) do
     t.bigint "wedding_id", null: false
     t.index ["wedding_id", "digest"], name: "index_task_imports_on_wedding_id_and_digest", unique: true
     t.index ["wedding_id"], name: "index_task_imports_on_wedding_id"
-    t.check_constraint "status::text = ANY (ARRAY['pending'::character varying, 'committed'::character varying]::text[])", name: "task_imports_valid_status"
+    t.check_constraint "status::text = ANY (ARRAY['pending'::character varying::text, 'committed'::character varying::text])", name: "task_imports_valid_status"
   end
 
   create_table "tasks", force: :cascade do |t|
@@ -265,7 +421,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_07_000001) do
     t.index ["wedding_id", "status", "due_on"], name: "index_tasks_on_wedding_id_and_status_and_due_on"
     t.index ["wedding_id"], name: "index_tasks_on_wedding_id"
     t.check_constraint "origin::text <> 'import'::text OR source_key IS NOT NULL", name: "import_tasks_require_source"
-    t.check_constraint "origin::text = ANY (ARRAY['ai'::character varying, 'manual'::character varying, 'import'::character varying]::text[])", name: "tasks_valid_origin"
+    t.check_constraint "origin::text = ANY (ARRAY['ai'::character varying::text, 'manual'::character varying::text, 'import'::character varying::text])", name: "tasks_valid_origin"
     t.check_constraint "status::text = ANY (ARRAY['todo'::character varying::text, 'doing'::character varying::text, 'done'::character varying::text, 'cancelled'::character varying::text])", name: "tasks_valid_status"
   end
 
@@ -289,11 +445,27 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_07_000001) do
   end
 
   add_foreign_key "analysis_runs", "documents"
+  add_foreign_key "budget_items", "weddings"
   add_foreign_key "candidates", "analysis_runs"
   add_foreign_key "candidates", "documents"
+  add_foreign_key "cash_gift_rules", "weddings"
   add_foreign_key "documents", "weddings"
+  add_foreign_key "gift_assignments", "budget_items"
+  add_foreign_key "gift_assignments", "gift_sets"
+  add_foreign_key "gift_assignments", "households"
+  add_foreign_key "gift_assignments", "weddings"
+  add_foreign_key "gift_set_items", "gift_sets"
+  add_foreign_key "gift_sets", "weddings"
+  add_foreign_key "guests", "households"
+  add_foreign_key "guests", "seating_tables"
+  add_foreign_key "guests", "weddings"
+  add_foreign_key "households", "cash_gift_rules"
+  add_foreign_key "households", "weddings"
   add_foreign_key "memberships", "users"
   add_foreign_key "memberships", "weddings"
+  add_foreign_key "money_movements", "budget_items"
+  add_foreign_key "money_movements", "weddings"
+  add_foreign_key "seating_tables", "weddings"
   add_foreign_key "solid_queue_batch_executions", "solid_queue_batches", column: "batch_id", on_delete: :cascade
   add_foreign_key "solid_queue_batch_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_blocked_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade

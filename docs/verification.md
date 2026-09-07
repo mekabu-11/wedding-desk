@@ -1,5 +1,12 @@
 # 検証記録
 
+## 2026-09-08：段階1（ゲスト・世帯・席次・引き出物・収支基盤）
+
+- 架空データの統合テストを追加：ゲストCRUD、別Weddingのゲスト／BudgetItem IDOR拒否、世帯ごとのご祝儀BudgetItem一意性、出欠・属性変更による概算数量の再計算と確定額固定、区分・引き出物内訳変更による概算再計算、内金・返金・超過表示、引き出物割当の単一BudgetItem、GiftSet内訳の税抜単価計算、属性・検索・二重送信・タブ別表示分離を確認。
+- Ruby各モデル・コントローラ・migration・テストの構文確認と`git diff --check`は成功。
+- DockerでテストDBを削除・再作成し、全migrationを初回適用したうえで`db:prepare`相当、対象テスト（20 tests / 138 assertions）、全テスト（59 tests / 385 assertions）、`zeitwerk:check`を実行し、すべて成功。`git diff --check`も成功。
+- 画面はERBのゲスト4タブ、世帯／卓／ご祝儀区分／引き出物セット／割当、BudgetItem／MoneyMovementの手動CRUDを追加済み。統合テストで各一覧・入力・編集画面のHTMLレンダリングを確認した。Macがロック中のため、CUAブラウザによる実機画面確認は未実施。
+
 ## 2026-09-07：2アカウント共有・資料削除後のタスク保持
 
 - Membershipへ既存所有者を移行し、開発DBでusers 1 / weddings 1 / memberships 1、所属のないWedding 0を確認。

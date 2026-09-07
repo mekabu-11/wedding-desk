@@ -1,0 +1,1 @@
+<%= link_to "← 引き出物", guests_path(tab: "gifts"), class: "back-link" %><header class="page-heading"><div><h1>引き出物を割り当てる</h1><p>承認した世帯へセットと数量を割り当てます。</p></div></header><section class="surface narrow"><%= render "form", gift_assignment: @gift_assignment, households: @households, gift_sets: @gift_sets %></section>

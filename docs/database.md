@@ -8,6 +8,22 @@ TaskImportはWeddingに所属し、暗号化したrowsとdigest、pending/commit
 
 以下は既存AIフローの構成。
 
+## 段階1：ゲストと収支の基盤（2026-09-08）
+
+ゲスト領域はすべてWeddingに所属し、`Guest`（個人）を任意の`Household`（世帯）と`SeatingTable`（卓）へ割り当てる。`attendance`は`attending/declined/pending/unanswered`で、招待状態とは別に保存する。`CashGiftRule`は初期提案額だけを持ち、世帯が明示的に登録した時に、世帯ごとに1件の`BudgetItem`（`source_kind=cash_gift`）を作る。
+
+引き出物は`GiftSet`と`GiftSetItem`で設定し、`GiftAssignment`の世帯・セット・数量を手動で確定する。割当を保存すると割当ごとに1件の`BudgetItem`（`source_kind=gift_assignment`）を作る。世帯人数を掛けず、設定価格の変更で確定済み明細を上書きしない。
+
+`GiftSetItem`の単価は税込・税区分不明なら最終価格として扱い、税抜の場合だけ税率と丸め（切捨て・四捨五入・切上げ）を使ってセット合計へ反映する。空の内訳行は保存対象から除外する。
+
+`BudgetItem`は収入／支出、金額、概算／確定、集計対象を1つの正本として保存する。業者・支払先や4種類の金額欄は持たない。`MoneyMovement`はBudgetItemにのみ所属し、支払い・受取・返金・返戻の履歴から未払い・一部・完了・超過を導出する。履歴がある明細は削除できず、同じWedding内の複合インデックス、`lock_version`、同一Weddingの関連検証を備える。お車代の元関連は`travel_guest`／`travel_household`へ分け、曖昧なIDを受け付けない。
+
+出欠・年齢・世帯・席の変更時は、数量計算かつ概算のBudgetItemだけを対象Wedding内で再計算する。確定明細は固定し、再計算は対象scopeの`find_each`で行う。ご祝儀区分の金額変更と引き出物内訳の価格・税率・丸め変更も、紐づく概算明細だけを更新し、既存の確定明細と削除済み区分の明細は保持する。
+
+数量計算で税区分が税抜の場合だけ、明示した`tax_rate`と`rounding`を使って単価×数量へ加算する。税込・不明は加算せず、税率は0〜100の範囲、税抜数量計算では必須とする。直接入力の金額は支払総額として扱う。
+
+すべての段階1コントローラは`current_wedding`の関連から対象を検索するため、URLへ別WeddingのIDを指定しても404になる。氏名・世帯名・メモ・金額項目名・入出金メモなどはActive Record Encryptionの対象とし、一覧は`includes`または集計クエリと30件ページングで取得する。
+
 PostgreSQLを使用する。通常データとSolid Queueのテーブルは別データベース。同じPostgreSQLコンテナ上で動作する。
 
 ```text
