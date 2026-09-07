@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900" role="img" aria-labelledby="title desc">
+  <title id="title">Wedding Desk ログイン画面</title><desc id="desc">Wedding Deskのログイン画面のサンプル</desc>
+  <rect width="1440" height="900" fill="#fafbf9"/>
+  <rect x="80" y="55" width="1280" height="790" rx="18" fill="#fff" stroke="#e2e8e2" stroke-width="2"/>
+  <rect x="81" y="56" width="650" height="788" rx="18" fill="#f0f4ed"/>
+  <text x="140" y="135" fill="#596a61" font-family="Arial, sans-serif" font-size="15" letter-spacing="3">W.  WEDDING DESK</text>
+  <text x="140" y="290" fill="#263d37" font-family="Georgia, serif" font-size="44">大切な日の準備に、</text>
+  <text x="140" y="350" fill="#263d37" font-family="Georgia, serif" font-size="44">すこしの余白を。</text>
+  <text x="140" y="415" fill="#596a61" font-family="Arial, sans-serif" font-size="18">届いた連絡から、次にやることへ。</text>
+  <text x="140" y="450" fill="#596a61" font-family="Arial, sans-serif" font-size="18">ふたりの結婚式準備を、ひとつの場所で。</text>
+  <text x="140" y="760" fill="#596a61" font-family="Arial, sans-serif" font-size="13">A LITTLE LESS TO REMEMBER</text>
+  <text x="820" y="235" fill="#596a61" font-family="Arial, sans-serif" font-size="12" letter-spacing="3">WELCOME BACK</text>
+  <text x="820" y="285" fill="#263d37" font-family="Arial, sans-serif" font-size="30" font-weight="600">準備の続きをはじめる</text>
+  <text x="820" y="322" fill="#596a61" font-family="Arial, sans-serif" font-size="15">あなた専用のワークスペースにログイン。</text>
+  <text x="820" y="390" fill="#263d37" font-family="Arial, sans-serif" font-size="14" font-weight="600">メールアドレス</text>
+  <rect x="820" y="410" width="450" height="55" rx="7" fill="#fff" stroke="#d7dfd7" stroke-width="2"/>
+  <text x="840" y="445" fill="#9aa69e" font-family="Arial, sans-serif" font-size="14">owner@example.com</text>
+  <text x="820" y="510" fill="#263d37" font-family="Arial, sans-serif" font-size="14" font-weight="600">パスワード</text>
+  <rect x="820" y="530" width="450" height="55" rx="7" fill="#fff" stroke="#d7dfd7" stroke-width="2"/>
+  <text x="840" y="565" fill="#9aa69e" font-family="Arial, sans-serif" font-size="18">••••••••••••</text>
+  <rect x="820" y="630" width="450" height="58" rx="7" fill="#315e50"/>
+  <text x="1045" y="667" fill="#fff" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="600">ログイン</text>
+  <text x="1045" y="735" fill="#596a61" text-anchor="middle" font-family="Arial, sans-serif" font-size="13">招待制の個人用ワークスペースです。</text>
+</svg>
