@@ -18,10 +18,6 @@ test:
     <<: *default
     database: wedding_desk_test
 production:
-  primary:
-    <<: *default
-    url: <%= ENV["DATABASE_URL"] %>
-  queue:
-    <<: *default
-    url: <%= ENV["QUEUE_DATABASE_URL"] %>
-    migrations_paths: db/queue_migrate
+  <<: *default
+  url: <%= ENV["DATABASE_URL"] %>
+  sslmode: <%= ENV.fetch("DB_SSLMODE", "require") %>

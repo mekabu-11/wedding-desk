@@ -26,7 +26,7 @@ module WeddingDesk
     config.i18n.default_locale = :ja
     config.i18n.fallbacks = [:en]
     config.active_job.queue_adapter = :solid_queue
-    config.solid_queue.connects_to = { database: { writing: :queue } } unless Rails.env.test?
+    config.solid_queue.connects_to = { database: { writing: :queue } } unless Rails.env.test? || Rails.env.production?
     config.log_level = :info
     config.active_record.encryption.primary_key = ENV.fetch("AR_ENCRYPTION_PRIMARY_KEY") { "test-or-build-only" if Rails.env.test? || ENV["SECRET_KEY_BASE_DUMMY"] }
     config.active_record.encryption.deterministic_key = ENV.fetch("AR_ENCRYPTION_DETERMINISTIC_KEY") { "test-or-build-only" if Rails.env.test? || ENV["SECRET_KEY_BASE_DUMMY"] }

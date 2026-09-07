@@ -1,16 +1,39 @@
-# Dockerによる配置と運用
+# Render + Supabase への公開
 
-## 開発
+このアプリは、Render の Web Service と Supabase PostgreSQL を使い、スマホ・PCのブラウザから同じURLで利用できる。`render.yaml` を用意してあるため、Render では GitHub リポジトリを指定して Blueprint として作成する。
 
-`bin/setup` のみで構築する。ホストにRuby・PostgreSQLを入れない。
+## 公開手順
 
-- web：Rails/Puma、ホストの127.0.0.1:3210に限定
-- worker：Solid Queue（独立プロセス）
-- db：PostgreSQL 17、named volume、ホスト公開なし
+1. Supabase で新規プロジェクトを作成する。リージョンは利用者に近い Tokyo を選ぶ。
+2. Supabase の **Connect** から **Session pooler** の接続文字列を取得する。`sslmode=require` を含む URI を使う。Render からの接続には Direct connection や Transaction pooler ではなく Session pooler を使う。
+3. Render の Dashboard で **New > Blueprint** を選び、この GitHub リポジトリを接続する。検出された `render.yaml` をそのまま使う。
+4. Render が入力を求める次の値を設定する。値はGitに保存しない。
 
-Compose名は `wedding-desk-github`。他アプリのコンテナ・DB・ネットワークを操作しない。
+   | 変数 | 設定する値 |
+   | --- | --- |
+   | `DATABASE_URL` | 手順2のSupabase Session pooler接続URI |
+   | `APP_EMAIL` | このアプリにログインするメールアドレス |
+   | `APP_PASSWORD` | 12文字以上の新しいログインパスワード |
 
-暗号化鍵、SECRET_KEY_BASE、DBパスワードを `.env` に保存する。`.env` はGitおよびDocker build contextから除外する。Composeの展開済み設定には秘密値が含まれるため、その出力を公開しない。
+   `SECRET_KEY_BASE` と `AR_ENCRYPTION_*` は Render が初回作成時に自動生成する。生成後は変更・削除しない。変更すると既存の暗号化済み本文を読めなくなる。
+
+5. Deploy を実行する。起動時にDBマイグレーションと初期ユーザー作成を行う。デプロイ完了後、Render が表示する `https://...onrender.com` を開き、手順4のメールアドレスとパスワードでログインする。
+6. Render の設定で自動デプロイを有効にしておく。`main` への push が次回以降の更新になる。
+
+## 動作と制約
+
+- Render Free は 15 分間アクセスがないと停止する。次のアクセス時は起動までおよそ1分かかる。
+- Free では常駐ワーカーを作れないため、Solid Queue はWebプロセス内で処理する。画面を開いている間は、AI解析を含むバックグラウンド処理も動く。
+- Supabase Free は利用がない期間に停止することがある。常用開始後は、必要に応じて有料プランへ変更する。
+- 公開URLはRailsのログイン画面で保護されるが、共有端末ではログアウトする。
+
+## バックアップ
+
+Supabase Free には自動バックアップがない。公開後は少なくとも月1回、Supabaseの Database Backups か `pg_dump` でバックアップを取得し、アプリの暗号化キーとは別に安全に保管する。暗号化キーを失うと、バックアップがあっても暗号化済みの本文は復元できない。
+
+## ローカル Docker 開発
+
+`bin/setup` のみで構築する。ホストに Ruby・PostgreSQL を入れない。
 
 ```sh
 docker compose logs --tail=50 web worker
@@ -18,35 +41,8 @@ docker compose run --rm -e RAILS_ENV=test web bin/rails db:prepare
 docker compose run --rm -e RAILS_ENV=test web bin/rails test
 ```
 
-ソースは開発時だけbind mountする。Gemを変更した場合はイメージを再ビルドする。ワーカーはコード変更後に `docker compose restart worker`。
+Compose名は `wedding-desk-github`。`.env` はGitおよびDocker build contextから除外する。`docker compose down -v` はローカルDB volumeも削除するため、通常の停止には使わない。
 
-## 本番向け構成案（未デプロイ）
+## Dockerホストへ直接配置する場合
 
-常駐Web・常駐ワーカー・PostgreSQLが動くDockerホストを使う。Vercelへの配置はこの構成の対象外。
-
-`compose.production.yaml` は開発用bind mountを外し、production環境と別DBを指定する。Composeの `!reset` が使えるバージョンが必要。今回の検証環境はCompose v2.40.3。
-
-1. 本番ホストにDockerを用意する。
-2. `.env` を安全に配置し、ランダムな秘密値を設定する。開発と異なる値を使用し、DBパスワードにはURLへそのまま入れられる英数字・hexを使う。
-3. `APP_HOST` を使用するドメインにする。AIキー・モデルを設定する。
-4. TLSを終端するリバースプロキシを構成し、Webへ転送する。ホスト名検証・HTTPS強制・Secure Cookieを維持する。
-5. 次を実行する。
-
-```sh
-docker compose -f compose.yaml -f compose.production.yaml build
-docker compose -f compose.yaml -f compose.production.yaml up -d db
-docker compose -f compose.yaml -f compose.production.yaml run --rm web bin/rails db:prepare app:bootstrap
-docker compose -f compose.yaml -f compose.production.yaml up -d web worker
-```
-
-productionでは平文HTTPアクセスをHTTPSへリダイレクトする。TLSプロキシなしで公開しない。既存の開発環境と同一ホストで併用する場合は `-p` でCompose名を分け、APP_PORTと秘密値も分離する。
-
-## 秘密値・バックアップ
-
-- `.env` の暗号化鍵を失うと本文を復元できない。DBのバックアップとは別に安全に保管する。
-- アプリDBとキューDBのバックアップ、定期的な復元検証を行う。
-- 本番利用開始前にバックアップの暗号化、保持期間、削除期限を確定する。
-- `docker compose down -v` はDB volumeも削除するので、通常の停止には使わない。
-- この段階では外部ユーザー向け招待・パスワード再発行・管理画面を提供していない。
-
-本番のTLS、バックアップ復元、実APIのデータ保持設定は今回のローカル検証には含めない。
+`compose.production.yaml` はRenderを使わず、独自のDockerホストに置く場合の構成である。TLSを終端するリバースプロキシを用意し、`APP_HOST`、本番用の秘密値、PostgreSQLの `DATABASE_URL` を設定する。

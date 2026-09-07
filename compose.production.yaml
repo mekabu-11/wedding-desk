@@ -5,7 +5,6 @@ services:
     environment:
       RAILS_ENV: production
       DATABASE_URL: postgres://wedding:${DB_PASSWORD}@db/wedding_desk_production
-      QUEUE_DATABASE_URL: postgres://wedding:${DB_PASSWORD}@db/wedding_desk_production_queue
       APP_HOST: ${APP_HOST:-localhost}
     restart: unless-stopped
   worker:
@@ -13,7 +12,6 @@ services:
     environment:
       RAILS_ENV: production
       DATABASE_URL: postgres://wedding:${DB_PASSWORD}@db/wedding_desk_production
-      QUEUE_DATABASE_URL: postgres://wedding:${DB_PASSWORD}@db/wedding_desk_production_queue
       APP_HOST: ${APP_HOST:-localhost}
     restart: unless-stopped
   db:

@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: wedding-desk-private-mekabu-11
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    dockerCommand: sh bin/render-start
+    healthCheckPath: /up
+    envVars:
+      - key: RAILS_ENV
+        value: production
+      - key: RAILS_MAX_THREADS
+        value: "3"
+      - key: WEB_CONCURRENCY
+        value: "1"
+      - key: SOLID_QUEUE_IN_PUMA
+        value: "true"
+      - key: DATABASE_URL
+        sync: false
+      - key: APP_EMAIL
+        sync: false
+      - key: APP_PASSWORD
+        sync: false
+      - key: SECRET_KEY_BASE
+        generateValue: true
+      - key: AR_ENCRYPTION_PRIMARY_KEY
+        generateValue: true
+      - key: AR_ENCRYPTION_DETERMINISTIC_KEY
+        generateValue: true
+      - key: AR_ENCRYPTION_KEY_DERIVATION_SALT
+        generateValue: true
