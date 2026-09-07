@@ -12,6 +12,12 @@ class Wedding < ApplicationRecord
   has_many :money_movements, dependent: :destroy
   has_many :gift_sets, dependent: :destroy
   has_many :gift_assignments, dependent: :destroy
+  has_many :planning_items, dependent: :destroy
+  has_many :planning_options, dependent: :destroy
+  has_many :music_details, dependent: :destroy
+  has_many :planning_cost_links, dependent: :destroy
+  has_many :task_planning_links, dependent: :destroy
+  has_many :change_events, dependent: :destroy
   validate :valid_wedding_date
   def valid_wedding_date
     if wedding_date_before_type_cast.present? && wedding_date.nil?

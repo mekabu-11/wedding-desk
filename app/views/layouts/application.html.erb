@@ -19,6 +19,7 @@
       <%= nav_link("やること", tasks_path, controller_name == "tasks") %>
       <%= nav_link("ゲスト", guests_path, controller_name.in?(%w[guests households seating_tables cash_gift_rules gift_sets gift_assignments])) %>
       <%= nav_link("お金", budget_items_path, controller_name.in?(%w[budget_items money_movements])) %>
+      <%= nav_link("検討・決定", planning_items_path, controller_name.in?(%w[planning_items planning_options music_details planning_cost_links task_planning_links])) %>
     </nav>
     <div class="sidebar-bottom">
       <div class="wedding-mini"><span class="eyebrow">OUR WEDDING</span><strong><%= current_wedding.name %></strong><span><%= current_wedding.wedding_date&.strftime("%Y . %m . %d") || "挙式日未設定" %></span></div>

@@ -8,7 +8,7 @@
 <p class="muted">自分・パートナーの対応を確認してください。元の担当名もタスクの出典に残ります。</p>
 <%= form_with url: task_import_path(@batch), method: :patch, class: "form-stack import-mapping" do %>
 <% @labels.each_with_index do |label, i| %>
-<div class="field"><%= label_tag "mapping_#{i}", label.presence || '担当名なし' %><%= select_tag "mapping[#{i}]", options_for_select([['選択してください', '']] + Task::ASSIGNEES.map { |k,v| [v,k] }, label == '共同' ? 'both' : ''), id: "mapping_#{i}", required: true %></div>
+<div class="field"><%= label_tag "mapping_#{i}", label.presence || '担当名なし' %><%= select_tag "mapping[#{i}]", options_for_select([['選択してください', '']] + Task.assignee_options(@batch.wedding), label == '共同' ? 'both' : ''), id: "mapping_#{i}", required: true %></div>
 <% end %>
 <label class="check-label"><%= check_box_tag :confirmed, '1', false, required: true %><span>下のタスク・期限・状態を確認しました。同じ出典の登録済みタスクは変更しません。</span></label>
 <%= submit_tag "確認したタスクを登録する", class: "button primary" %>

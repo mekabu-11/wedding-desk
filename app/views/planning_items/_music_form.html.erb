@@ -1,0 +1,8 @@
+<% detail = option.music_detail || option.build_music_detail(wedding: option.wedding) %>
+<form action="<%= planning_option_music_detail_path(option) %>" method="post" class="form-stack"><%= hidden_field_tag :authenticity_token, form_authenticity_token %><%= hidden_field_tag :_method, "patch" if detail.persisted? %><%= hidden_field_tag "music_detail[lock_version]", detail.lock_version if detail.persisted? %>
+  <div class="form-grid"><div class="field"><%= label_tag "music_detail_scene", "シーン" %><%= text_field_tag "music_detail[scene]", detail.scene, maxlength: 120 %></div><div class="field"><%= label_tag "music_detail_start_offset_seconds", "開始秒" %><%= number_field_tag "music_detail[start_offset_seconds]", detail.start_offset_seconds, min: 0, step: 1 %></div></div>
+  <div class="form-grid"><div class="field"><%= label_tag "music_detail_wish_track_a", "希望曲A" %><%= text_field_tag "music_detail[wish_track_a]", detail.wish_track_a, maxlength: 200 %></div><div class="field"><%= label_tag "music_detail_wish_track_b", "希望曲B" %><%= text_field_tag "music_detail[wish_track_b]", detail.wish_track_b, maxlength: 200 %></div></div>
+  <div class="form-grid"><div class="field"><%= label_tag "music_detail_selected_track", "決定曲" %><%= text_field_tag "music_detail[selected_track]", detail.selected_track, maxlength: 200 %></div><div class="field"><%= label_tag "music_detail_artist", "アーティスト" %><%= text_field_tag "music_detail[artist]", detail.artist, maxlength: 150 %></div></div>
+  <div class="field"><%= label_tag "music_detail_original_text", "元表記" %><%= text_area_tag "music_detail[original_text]", detail.original_text, rows: 2, maxlength: 3000 %></div>
+  <%= submit_tag "BGM情報を保存", class: "button secondary" %>
+</form>

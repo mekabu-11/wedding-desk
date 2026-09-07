@@ -80,4 +80,21 @@ class TaskPreparationTest < ActionDispatch::IntegrationTest
       refute_includes response.body, '期間が重なる'
     end
   end
+
+  test "task list uses wedding names for person A and person B labels" do
+    owner = create_owner
+    wedding = create_wedding(owner)
+    wedding.update!(self_name: "架空花子", partner_name: "架空太郎")
+    wedding.tasks.create!(origin: "manual", title: "架空受付タスク", assignee: "person_a")
+    wedding.tasks.create!(origin: "manual", title: "架空連絡タスク", assignee: "person_b")
+    sign_in(owner)
+
+    get tasks_path
+
+    assert_response :success
+    assert_includes response.body, "架空花子"
+    assert_includes response.body, "架空太郎"
+    refute_includes response.body, "本人A"
+    refute_includes response.body, "本人B"
+  end
 end

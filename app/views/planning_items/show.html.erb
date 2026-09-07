@@ -1,0 +1,39 @@
+<%= link_to "← 検討・決定", planning_items_path(category: @planning_item.category), class: "back-link" %>
+<header class="page-heading"><div><p class="eyebrow"><%= PlanningItem::CATEGORIES[@planning_item.category] %></p><h1><%= @planning_item.title %></h1><p><%= @planning_item.notes.presence || "候補を追加して検討を進めます。" %></p></div><%= link_to "項目を編集", edit_planning_item_path(@planning_item), class: "button secondary" %></header>
+<section class="surface">
+  <div class="section-heading"><div><h2>候補</h2><p class="micro">一般項目は候補1件でも採用できます。</p></div></div>
+<form action="<%= planning_item_planning_options_path(@planning_item) %>" method="post" class="form-stack"><%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+    <div class="form-grid"><div class="field"><%= label_tag "planning_option_title", "候補名" %><%= text_field_tag "planning_option[title]", @new_option.title, required: true, maxlength: 150 %></div><div class="field"><%= label_tag "planning_option_reference_price_yen", "参考価格（円）" %><%= number_field_tag "planning_option[reference_price_yen]", @new_option.reference_price_yen, min: 0, step: 1 %></div></div>
+    <div class="field"><%= label_tag "planning_option_description", "説明" %><%= text_area_tag "planning_option[description]", @new_option.description, rows: 2, maxlength: 3000 %></div>
+    <%= submit_tag "候補を追加", class: "button primary" %>
+  </form>
+</section>
+<section class="surface" style="margin-top:24px">
+  <% if @planning_options.empty? %><p class="muted">候補はまだありません。</p><% end %>
+  <% @planning_options.each do |option| %>
+    <article class="candidate" style="border-bottom:1px solid var(--line)">
+      <div class="candidate-heading"><div><h3><%= option.title %></h3><p class="micro"><%= PlanningOption::STATUSES[option.status] %><%= " · 参考 #{number_to_currency(option.reference_price_yen, unit: '', precision: 0)}円" if option.reference_price_yen %></p></div><%= link_to "編集", edit_planning_option_path(option), class: "text-link" %></div>
+      <p><%= option.description %></p>
+      <% if option.selected? %><span class="badge green">採用</span><% elsif option.rejected? %><span class="badge muted">見送り</span><% end %>
+      <div class="task-actions" style="margin-top:13px">
+        <% unless option.selected? %>
+<form action="<%= select_planning_option_path(option) %>" method="post" class="form-stack"><%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+            <div class="form-grid"><div class="field"><%= label_tag :cost_mode, "採用時の費用" %><%= select_tag :cost_mode, options_for_select(@cost_mode_options), required: true %></div><div class="field"><%= label_tag :budget_item_id, "既存費用" %><%= select_tag :budget_item_id, options_for_select([["選択してください", ""]] + @budget_item_options) %></div></div>
+            <%= submit_tag "この候補を採用", class: "button primary" %>
+          </form>
+          <%= button_to "見送る", reject_planning_option_path(option), method: :post, class: "button secondary" %>
+        <% end %>
+      </div>
+      <% if @planning_item.category == "music" %><details style="margin-top:16px"><summary>BGM情報を編集</summary><%= render "music_form", option: option %></details><% end %>
+    </article>
+  <% end %>
+</section>
+<section class="surface" style="margin-top:24px"><div class="section-heading"><h2>費用リンク</h2></div>
+  <% if @cost_links.empty? %><p class="muted">紐付いた費用はありません。</p><% else %><% @cost_links.each do |link| %><p><%= link.budget_item.title %> · <%= link.budget_item.amount_yen ? "#{number_to_currency(link.budget_item.amount_yen, unit: '', precision: 0)}円" : "金額未確認" %> <%= button_to "解除", planning_cost_link_path(link), method: :delete, class: "button secondary" %></p><% end %><% end %>
+<form action="<%= planning_cost_links_path %>" method="post" class="form-grid"><%= hidden_field_tag :authenticity_token, form_authenticity_token %><%= hidden_field_tag :planning_item_id, @planning_item.id %><div class="field"><%= label_tag :budget_item_id, "既存BudgetItemを追加" %><%= select_tag :budget_item_id, options_for_select([["選択してください", ""]] + @budget_item_options), required: true %></div><%= submit_tag "費用を追加", class: "button secondary" %></form>
+</section>
+<section class="surface" style="margin-top:24px"><div class="section-heading"><h2>関連タスク</h2></div>
+  <% @task_links.each do |link| %><p><%= link.task.title %> <%= button_to "解除", task_planning_link_path(link), method: :delete, class: "button secondary" %></p><% end %>
+<form action="<%= task_planning_links_path %>" method="post" class="form-grid"><%= hidden_field_tag :authenticity_token, form_authenticity_token %><%= hidden_field_tag :planning_item_id, @planning_item.id %><div class="field"><%= label_tag :task_id, "タスクを追加" %><%= select_tag :task_id, options_for_select([["選択してください", ""]] + @task_options), required: true %></div><%= submit_tag "タスクを追加", class: "button secondary" %></form>
+</section>
+<section class="surface" style="margin-top:24px"><h2>最近の変更</h2><% if @change_events.empty? %><p class="muted">変更履歴はありません。</p><% else %><% @change_events.each do |event| %><p class="micro"><%= l event.created_at, format: :short %> · <%= event.action %></p><% end %><% end %></section>

@@ -15,6 +15,7 @@ class Guest < ApplicationRecord
   before_validation :inherit_wedding, on: :create
   before_validation :normalize_roles
   after_commit :recalculate_budget_estimates_after_change
+  attr_accessor :change_event_actor
 
   validates :name, presence: true, length: { maximum: 150 }
   validates :side, inclusion: { in: SIDES.keys }
@@ -50,8 +51,13 @@ class Guest < ApplicationRecord
   end
 
   def recalculate_budget_estimates_after_change
-    return unless destroyed? || previous_changes.key?("id") ||
-      (previous_changes.keys & %w[attendance age_group household_id seating_table_id]).any?
+    relevant = previous_changes.slice("attendance", "age_group", "household_id", "seating_table_id")
+    if destroyed? || relevant.any?
+      wedding = Wedding.find_by(id: wedding_id)
+      ChangeEvent.record!(wedding: wedding, actor: change_event_actor, target: self, action: destroyed? ? "guest_deleted" : "guest_attendance_changed",
+        before: relevant.transform_values(&:first).to_json, after: relevant.transform_values(&:last).to_json, source: "guest") if wedding
+    end
+    return unless destroyed? || relevant.any?
 
     BudgetEstimateRecalculator.for_guest_change!(wedding_id)
   end

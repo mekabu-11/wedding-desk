@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_08_000005) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_08_000008) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -88,6 +88,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_08_000005) do
     t.index ["wedding_id", "label"], name: "index_cash_gift_rules_on_wedding_id_and_label", unique: true
     t.index ["wedding_id"], name: "index_cash_gift_rules_on_wedding_id"
     t.check_constraint "default_amount_yen >= 0", name: "cash_gift_rules_amount_non_negative"
+  end
+
+  create_table "change_events", force: :cascade do |t|
+    t.string "action", null: false
+    t.bigint "actor_id"
+    t.text "after"
+    t.text "before"
+    t.datetime "created_at", null: false
+    t.text "source"
+    t.bigint "target_id", null: false
+    t.string "target_type", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "wedding_id", null: false
+    t.index ["actor_id"], name: "index_change_events_on_actor_id"
+    t.index ["wedding_id", "created_at"], name: "index_change_events_on_wedding_id_and_created_at"
+    t.index ["wedding_id", "target_type", "target_id", "created_at"], name: "index_change_events_on_target"
+    t.index ["wedding_id"], name: "index_change_events_on_wedding_id"
   end
 
   create_table "documents", force: :cascade do |t|
@@ -219,6 +236,69 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_08_000005) do
     t.index ["wedding_id", "idempotency_key"], name: "index_money_movements_on_wedding_id_and_idempotency_key", unique: true, where: "(idempotency_key IS NOT NULL)"
     t.index ["wedding_id"], name: "index_money_movements_on_wedding_id"
     t.check_constraint "amount_yen > 0", name: "money_movements_amount_positive"
+  end
+
+  create_table "music_details", force: :cascade do |t|
+    t.text "artist"
+    t.datetime "created_at", null: false
+    t.integer "lock_version", default: 0, null: false
+    t.text "original_text"
+    t.bigint "planning_option_id", null: false
+    t.string "scene"
+    t.text "selected_track"
+    t.integer "start_offset_seconds"
+    t.datetime "updated_at", null: false
+    t.bigint "wedding_id", null: false
+    t.text "wish_track_a"
+    t.text "wish_track_b"
+    t.index ["planning_option_id"], name: "index_music_details_on_planning_option_id", unique: true
+    t.index ["wedding_id"], name: "index_music_details_on_wedding_id"
+    t.check_constraint "start_offset_seconds IS NULL OR start_offset_seconds >= 0", name: "music_details_offset_non_negative"
+  end
+
+  create_table "planning_cost_links", force: :cascade do |t|
+    t.bigint "budget_item_id", null: false
+    t.datetime "created_at", null: false
+    t.integer "lock_version", default: 0, null: false
+    t.bigint "planning_item_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "wedding_id", null: false
+    t.index ["budget_item_id"], name: "index_planning_cost_links_on_budget_item_id"
+    t.index ["planning_item_id"], name: "index_planning_cost_links_on_planning_item_id"
+    t.index ["wedding_id", "planning_item_id", "budget_item_id"], name: "index_planning_cost_links_unique_pair", unique: true
+    t.index ["wedding_id", "planning_item_id"], name: "index_planning_cost_links_on_wedding_id_and_planning_item_id"
+    t.index ["wedding_id"], name: "index_planning_cost_links_on_wedding_id"
+  end
+
+  create_table "planning_items", force: :cascade do |t|
+    t.string "category", default: "other", null: false
+    t.datetime "created_at", null: false
+    t.integer "lock_version", default: 0, null: false
+    t.text "notes"
+    t.integer "position", default: 0, null: false
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "wedding_id", null: false
+    t.index ["wedding_id", "category", "position", "id"], name: "idx_on_wedding_id_category_position_id_fdd25119f0"
+    t.index ["wedding_id"], name: "index_planning_items_on_wedding_id"
+  end
+
+  create_table "planning_options", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.integer "lock_version", default: 0, null: false
+    t.bigint "planning_item_id", null: false
+    t.bigint "reference_price_yen"
+    t.string "status", default: "draft", null: false
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "wedding_id", null: false
+    t.index ["planning_item_id"], name: "index_planning_options_on_planning_item_id"
+    t.index ["planning_item_id"], name: "index_planning_options_one_selected_per_item", unique: true, where: "((status)::text = 'selected'::text)"
+    t.index ["wedding_id", "planning_item_id", "id"], name: "idx_on_wedding_id_planning_item_id_id_a157950c23"
+    t.index ["wedding_id"], name: "index_planning_options_on_wedding_id"
+    t.check_constraint "reference_price_yen IS NULL OR reference_price_yen >= 0", name: "planning_options_reference_price_non_negative"
+    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying::text, 'considering'::character varying::text, 'selected'::character varying::text, 'rejected'::character varying::text])", name: "planning_options_valid_status"
   end
 
   create_table "seating_tables", force: :cascade do |t|
@@ -398,6 +478,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_08_000005) do
     t.check_constraint "status::text = ANY (ARRAY['pending'::character varying::text, 'committed'::character varying::text])", name: "task_imports_valid_status"
   end
 
+  create_table "task_planning_links", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "lock_version", default: 0, null: false
+    t.bigint "planning_item_id", null: false
+    t.bigint "task_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "wedding_id", null: false
+    t.index ["planning_item_id"], name: "index_task_planning_links_on_planning_item_id"
+    t.index ["task_id"], name: "index_task_planning_links_on_task_id"
+    t.index ["wedding_id", "planning_item_id"], name: "index_task_planning_links_on_wedding_id_and_planning_item_id"
+    t.index ["wedding_id", "task_id", "planning_item_id"], name: "index_task_planning_links_unique_pair", unique: true
+    t.index ["wedding_id"], name: "index_task_planning_links_on_wedding_id"
+  end
+
   create_table "tasks", force: :cascade do |t|
     t.string "assignee", default: "unknown", null: false
     t.bigint "candidate_id"
@@ -420,6 +514,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_08_000005) do
     t.index ["wedding_id", "source_key"], name: "index_tasks_on_wedding_id_and_source_key", unique: true
     t.index ["wedding_id", "status", "due_on"], name: "index_tasks_on_wedding_id_and_status_and_due_on"
     t.index ["wedding_id"], name: "index_tasks_on_wedding_id"
+    t.check_constraint "assignee::text = ANY (ARRAY['person_a'::character varying::text, 'person_b'::character varying::text, 'both'::character varying::text, 'unknown'::character varying::text])", name: "tasks_valid_assignee"
     t.check_constraint "origin::text <> 'import'::text OR source_key IS NOT NULL", name: "import_tasks_require_source"
     t.check_constraint "origin::text = ANY (ARRAY['ai'::character varying::text, 'manual'::character varying::text, 'import'::character varying::text])", name: "tasks_valid_origin"
     t.check_constraint "status::text = ANY (ARRAY['todo'::character varying::text, 'doing'::character varying::text, 'done'::character varying::text, 'cancelled'::character varying::text])", name: "tasks_valid_status"
@@ -449,6 +544,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_08_000005) do
   add_foreign_key "candidates", "analysis_runs"
   add_foreign_key "candidates", "documents"
   add_foreign_key "cash_gift_rules", "weddings"
+  add_foreign_key "change_events", "users", column: "actor_id"
+  add_foreign_key "change_events", "weddings"
   add_foreign_key "documents", "weddings"
   add_foreign_key "gift_assignments", "budget_items"
   add_foreign_key "gift_assignments", "gift_sets"
@@ -465,6 +562,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_08_000005) do
   add_foreign_key "memberships", "weddings"
   add_foreign_key "money_movements", "budget_items"
   add_foreign_key "money_movements", "weddings"
+  add_foreign_key "music_details", "planning_options"
+  add_foreign_key "music_details", "weddings"
+  add_foreign_key "planning_cost_links", "budget_items"
+  add_foreign_key "planning_cost_links", "planning_items"
+  add_foreign_key "planning_cost_links", "weddings"
+  add_foreign_key "planning_items", "weddings"
+  add_foreign_key "planning_options", "planning_items"
+  add_foreign_key "planning_options", "weddings"
   add_foreign_key "seating_tables", "weddings"
   add_foreign_key "solid_queue_batch_executions", "solid_queue_batches", column: "batch_id", on_delete: :cascade
   add_foreign_key "solid_queue_batch_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
@@ -475,6 +580,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_08_000005) do
   add_foreign_key "solid_queue_recurring_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_scheduled_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "task_imports", "weddings"
+  add_foreign_key "task_planning_links", "planning_items"
+  add_foreign_key "task_planning_links", "tasks"
+  add_foreign_key "task_planning_links", "weddings"
   add_foreign_key "tasks", "candidates"
   add_foreign_key "tasks", "weddings"
 end

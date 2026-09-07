@@ -1,10 +1,17 @@
 # 検証記録
 
+## 2026-09-08：段階2（検討・決定、BGM、関連付け、履歴）
+
+- 検討項目・候補・採用／見送り、BGM詳細、費用リンク、タスクリンク、別Wedding拒否を架空データの統合テストで確認。
+- 採用候補は1項目1件、採用時の費用選択はトランザクション内で処理し、既存BudgetItemの再利用と3項目から同一BudgetItemへのリンクでも集計を増幅しないことを確認。
+- Guest出欠変更、BudgetEstimateRecalculator、採用操作のChangeEventとactor/source、担当の旧値移行互換を確認。
+- Dockerで空のテストDBへ全migrationを初回適用し、段階2対象テスト（8 tests / 83 assertions）、全テスト（67 tests / 468 assertions）、`zeitwerk:check`、`git diff --check`を実行し、すべて成功。
+
 ## 2026-09-08：段階1（ゲスト・世帯・席次・引き出物・収支基盤）
 
 - 架空データの統合テストを追加：ゲストCRUD、別Weddingのゲスト／BudgetItem IDOR拒否、世帯ごとのご祝儀BudgetItem一意性、出欠・属性変更による概算数量の再計算と確定額固定、区分・引き出物内訳変更による概算再計算、内金・返金・超過表示、引き出物割当の単一BudgetItem、GiftSet内訳の税抜単価計算、属性・検索・二重送信・タブ別表示分離を確認。
 - Ruby各モデル・コントローラ・migration・テストの構文確認と`git diff --check`は成功。
-- DockerでテストDBを削除・再作成し、全migrationを初回適用したうえで`db:prepare`相当、対象テスト（20 tests / 138 assertions）、全テスト（59 tests / 385 assertions）、`zeitwerk:check`を実行し、すべて成功。`git diff --check`も成功。
+- DockerでテストDBを削除・再作成し、全migrationを初回適用したうえで`db:prepare`相当、段階1対象テスト（20 tests / 138 assertions）、全テスト（67 tests / 468 assertions）、`zeitwerk:check`を実行し、すべて成功。`git diff --check`も成功。
 - 画面はERBのゲスト4タブ、世帯／卓／ご祝儀区分／引き出物セット／割当、BudgetItem／MoneyMovementの手動CRUDを追加済み。統合テストで各一覧・入力・編集画面のHTMLレンダリングを確認した。Macがロック中のため、CUAブラウザによる実機画面確認は未実施。
 
 ## 2026-09-07：2アカウント共有・資料削除後のタスク保持

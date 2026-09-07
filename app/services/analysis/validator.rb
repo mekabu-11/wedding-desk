@@ -5,6 +5,8 @@ module Analysis
       JSON.parse(Rails.root.join("config/analysis_schema.json").read)
     end
     def self.call(result, document)
+      result = result.deep_dup
+      result.fetch("tasks").each { |item| item["assignee"] = Task.normalize_assignee(item["assignee"]) }
       raise Error.new("invalid_output") unless JSONSchemer.schema(schema).valid?(result)
       result.fetch("tasks").each do |item|
         quote = item.fetch("quote")

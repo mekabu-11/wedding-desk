@@ -15,3 +15,4 @@
 <% else %><p class="muted">手動で追加したタスクです。</p><% end %>
 <p class="micro">手動で変更した内容は、再解析や同じ出典の再取り込みで上書きされません。</p>
 </aside></div>
+<section class="surface" style="margin-top:24px"><h2>関連する検討項目</h2><% @task_planning_links.each do |link| %><p><%= link_to link.planning_item.title, planning_item_path(link.planning_item) %> <%= button_to "解除", task_planning_link_path(link), method: :delete, class: "button secondary" %></p><% end %><%= form_with url: task_planning_links_path, method: :post, class: "form-grid" do |f| %><%= hidden_field_tag :task_id, @task.id %><div class="field"><%= label_tag :planning_item_id, "検討項目を追加" %><%= select_tag :planning_item_id, options_for_select([["選択してください", ""]] + @planning_items.map { |item| [item.title, item.id] }), required: true %></div><%= f.submit "追加", class: "button secondary" %><% end %></section>

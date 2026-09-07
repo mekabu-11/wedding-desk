@@ -13,6 +13,8 @@ class BudgetItem < ApplicationRecord
   belongs_to :wedding
   has_many :money_movements, dependent: :restrict_with_error
   has_one :gift_assignment, dependent: :nullify
+  has_many :planning_cost_links, dependent: :destroy
+  has_many :planning_items, through: :planning_cost_links
 
   encrypts :title
 

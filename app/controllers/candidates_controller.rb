@@ -8,6 +8,7 @@ class CandidatesController < ApplicationController
       return redirect_to @document, alert: "原文と期限・担当を確認してチェックしてください。"
     end
     attributes = decision == "accept" ? params.require(:task).permit(:title, :description, :assignee, :due_on, :due_at, :category).to_h : {}
+    attributes["assignee"] = Task.normalize_assignee(attributes["assignee"]) if attributes["assignee"]
     attributes["original_due_text"] = candidate.payload["original_due_text"] if decision == "accept"
     ReviewCandidate.call(candidate, decision: decision, attributes: attributes)
     redirect_to @document, notice: decision == "accept" ? "タスク一覧に反映しました。" : "候補を見送りました。", status: :see_other

@@ -11,6 +11,7 @@ class BudgetItemsController < ApplicationController
     @expense_total = current_wedding.budget_items.included.expenses.sum(:amount_yen)
     @income_total = current_wedding.budget_items.included.income.sum(:amount_yen)
     @unknown_count = current_wedding.budget_items.included.where(amount_yen: nil).count
+    @burden_estimate = (@expense_total || 0) - (@income_total || 0)
   end
 
   def new
@@ -26,7 +27,9 @@ class BudgetItemsController < ApplicationController
     end
   end
 
-  def edit; end
+  def edit
+    @change_events = ChangeEvent.for_target(@budget_item).where(wedding_id: current_wedding.id).limit(10)
+  end
 
   def update
     if @budget_item.update(budget_item_params)

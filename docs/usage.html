@@ -28,7 +28,8 @@
       <a href="#contact">3. 連絡を登録</a>
       <a href="#review">4. 候補を確認</a>
       <a href="#import">5. Excelデータ移行</a>
-      <a href="#daily">6. 毎日の使い方</a>
+      <a href="#planning">6. 検討・決定</a>
+      <a href="#daily">7. 毎日の使い方</a>
     </nav>
 
     <main>
@@ -63,14 +64,21 @@
 
       <section class="step" id="import">
         <h2><span>5</span>Excelからタスクを移行する</h2>
-        <p class="lead">付属の移行用JSONを使うと、Excelから整理したタスクをまとめて取り込めます。ゲスト、収支、BGMは現バージョンでは取り込み対象外です。</p>
+        <p class="lead">付属の移行用JSONを使うと、Excelから整理したタスクをまとめて取り込めます。ゲスト・収支・BGMは画面から手動で登録します。</p>
         <div class="shot"><img src="screenshots/task-import.svg" alt="Wedding Deskのタスク取り込み画面のサンプル"><div class="caption">画面例：import_candidates.jsonを選び、内容を確認してから登録</div></div>
-        <ol class="checklist"><li>「やること」→「データを取り込む」を開く</li><li><span class="key">import_candidates.json</span> を選び、「内容を確認する」を押す</li><li>元の担当名を「自分」「パートナー」「ふたり」に割り当てる</li><li>タスク・期限・状態を確認し、「確認したタスクを登録する」を押す</li></ol>
+        <ol class="checklist"><li>「やること」→「データを取り込む」を開く</li><li><span class="key">import_candidates.json</span> を選び、「内容を確認する」を押す</li><li>元の担当名を「本人A」「本人B」「ふたり」に割り当てる</li><li>タスク・期限・状態を確認し、「確認したタスクを登録する」を押す</li></ol>
         <div class="tip"><strong>同じタスクを再度取り込んだ場合</strong><br>出典キーが同じタスクは重複登録されません。既存タスクの内容も上書きしません。</div>
       </section>
 
+      <section class="step" id="planning">
+        <h2><span>6</span>検討・決定を進める</h2>
+        <p class="lead">「検討・決定」から演出やBGMなどの項目を追加し、候補を複数登録します。採用時は費用の扱いを必ず選び、既存BudgetItemへのリンクや新しい支出を同時に保存できます。</p>
+        <div class="cols"><article class="card"><h3>BGM</h3><p>BGMカテゴリでは候補ごとに希望曲A/B、決定曲、アーティスト、開始秒、シーン、元表記を登録できます。</p></article><article class="card"><h3>関連付け</h3><p>項目詳細から費用とタスクを追加・解除できます。リンクを解除してもBudgetItemや入出金履歴は削除されません。</p></article></div>
+        <div class="tip"><strong>採用の変更</strong><br>採用候補を変えても以前のBudgetItemや入出金履歴は残ります。収支はBudgetItemを一度だけ集計します。</div>
+      </section>
+
       <section class="step" id="daily">
-        <h2><span>6</span>毎日の使い方</h2>
+        <h2><span>7</span>毎日の使い方</h2>
         <p class="lead">新しい連絡が来たら資料として残し、候補を確認したらタスクにします。ふたりで同じ画面を見ることで、返信漏れや期限の見落としを減らせます。</p>
         <div class="cols"><article class="card"><h3>連絡が来た日</h3><ul><li>本文を「資料と連絡」に登録</li><li>期限や担当の候補を確認</li><li>必要なものだけタスクに追加</li></ul></article><article class="card"><h3>週に一度</h3><ul><li>期限超過のタスクを確認</li><li>担当と期限を見直す</li><li>終わったタスクを完了にする</li></ul></article></div>
         <div class="tip"><strong>スマホでも使えます</strong><br>公開後のRender URLをスマホのブラウザで開き、ホーム画面に追加するとアプリのように起動できます。データはPCと同じSupabaseに保存されます。</div>

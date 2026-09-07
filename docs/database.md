@@ -22,6 +22,14 @@ TaskImportはWeddingに所属し、暗号化したrowsとdigest、pending/commit
 
 数量計算で税区分が税抜の場合だけ、明示した`tax_rate`と`rounding`を使って単価×数量へ加算する。税込・不明は加算せず、税率は0〜100の範囲、税抜数量計算では必須とする。直接入力の金額は支払総額として扱う。
 
+## 段階2：検討・決定と関連履歴（2026-09-08）
+
+`PlanningItem`はWedding内の検討項目、`PlanningOption`は候補を表し、候補の状態は下書き・検討中・採用・見送りで管理する。採用はDBの部分一意索引と項目ロック下のトランザクションで1項目1件に制限する。BGMだけ`MusicDetail`を1対1で持ち、希望曲A/B、決定曲、歌手、開始秒、シーン、元表記を保存する。
+
+採用時の費用処理は既存BudgetItemへのリンク、新規支出、追加費用なし、金額未確認のいずれかを必ず選ぶ。`PlanningCostLink`はリンクだけを保存し、同一BudgetItemを複数項目から参照しても収支集計はBudgetItemのIDを1回だけ数える。`TaskPlanningLink`はタスクと検討項目を同一Wedding内で関連付ける。
+
+`ChangeEvent`は採用変更、ゲストの出欠等の手動変更、概算BudgetItemの自動再計算を暗号化したbefore/afterとともに保存する。再計算は対象scopeだけを通常更新し、lock_versionを進め、金額が変わらない場合は履歴を作らない。手動操作はログイン中のactor、自動再計算はactorなしで記録する。
+
 すべての段階1コントローラは`current_wedding`の関連から対象を検索するため、URLへ別WeddingのIDを指定しても404になる。氏名・世帯名・メモ・金額項目名・入出金メモなどはActive Record Encryptionの対象とし、一覧は`includes`または集計クエリと30件ページングで取得する。
 
 PostgreSQLを使用する。通常データとSolid Queueのテーブルは別データベース。同じPostgreSQLコンテナ上で動作する。

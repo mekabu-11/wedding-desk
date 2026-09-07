@@ -1,10 +1,12 @@
 class TasksController < ApplicationController
   before_action :set_task, only: %i[edit update]
+  before_action :load_planning_context, only: %i[edit update]
   def index
+    @assignee_options = Task.assignee_options(current_wedding)
     @status = params[:status].presence_in(Task::STATUSES.keys)
     @tasks = current_wedding.tasks.includes(candidate: :document)
     @tasks = @status ? @tasks.where(status: @status) : @tasks.open_items
-    @assignee = params[:assignee].presence_in(Task::ASSIGNEES.keys)
+    @assignee = Task.normalize_assignee(params[:assignee]).presence_in(Task::ASSIGNEES.keys)
     @tasks = @tasks.where(assignee: @assignee) if @assignee
     @period = params[:period].presence_in(%w[week overdue])
     deadline = "COALESCE(due_on, (due_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Tokyo')::date)"
@@ -45,5 +47,10 @@ class TasksController < ApplicationController
   end
   def set_task
     @task = current_wedding.tasks.find(params[:id])
+  end
+
+  def load_planning_context
+    @planning_items = current_wedding.planning_items.order(:position, :id).limit(200)
+    @task_planning_links = @task.task_planning_links.includes(:planning_item).order(:id)
   end
 end

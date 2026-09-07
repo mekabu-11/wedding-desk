@@ -43,7 +43,13 @@ class BudgetEstimateRecalculator
     def update_amount!(item, amount)
       return if item.amount_yen == amount
 
-      item.update!(amount_yen: amount)
+      before = item.amount_yen
+      BudgetItem.transaction do
+        item.update!(amount_yen: amount)
+        ChangeEvent.record!(wedding: item.wedding, target: item, action: "budget_estimate_recalculated",
+          before: { amount_yen: before }.to_json, after: { amount_yen: amount }.to_json,
+          source: "automatic_recalculation")
+      end
     end
   end
 end

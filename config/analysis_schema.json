@@ -45,8 +45,8 @@
           "assignee": {
             "type": "string",
             "enum": [
-              "self",
-              "partner",
+              "person_a",
+              "person_b",
               "both",
               "unknown"
             ]

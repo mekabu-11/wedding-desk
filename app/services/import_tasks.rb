@@ -55,7 +55,7 @@ class ImportTasks
   def self.attributes(row, mapping)
     { title: row["title"], description: row["notes"], starts_on: row["starts_on"], due_on: row["due_on"],
       status: row["status"], category: row["category"], origin: "import", source_key: row["source_key"],
-      assignee: mapping.fetch(row["assignee_raw"].to_s, "unknown"),
+      assignee: Task.normalize_assignee(mapping.fetch(row["assignee_raw"].to_s, "unknown")),
       source_details: row.slice("source_file", "source_sheet", "source_row", "assignee_raw", "category_raw") }
   end
 
@@ -63,7 +63,7 @@ class ImportTasks
     batch.with_lock do
       return batch if batch.status == "committed"
       labels = batch.rows.map { |r| r["assignee_raw"].to_s }.uniq
-      raise Invalid, "すべての担当の割り当てを選んでください。" unless labels.all? { |label| Task::ASSIGNEES.key?(mapping[label]) }
+      raise Invalid, "すべての担当の割り当てを選んでください。" unless labels.all? { |label| Task::ASSIGNEES.key?(Task.normalize_assignee(mapping[label])) }
       batch.wedding.with_lock do
         added = skipped = 0
         batch.rows.each do |row|

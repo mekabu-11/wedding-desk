@@ -36,7 +36,7 @@ class ImportTasksTest < ActiveSupport::TestCase
     ImportTasks.commit(another, { "担当A" => "partner" })
     assert_equal 1, another.skipped_count
     assert_equal "利用者による変更", task.reload.title
-    assert_equal "self", task.assignee
+    assert_equal "person_a", task.assignee
   end
   test "source keys are scoped to each wedding" do
     2.times do

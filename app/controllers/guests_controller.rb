@@ -20,6 +20,7 @@ class GuestsController < ApplicationController
 
   def create
     @guest = current_wedding.guests.new(guest_params)
+    @guest.change_event_actor = current_user
     if @guest.save
       redirect_to guests_path(tab: "individuals"), notice: "ゲストを追加しました。", status: :see_other
     else
@@ -30,9 +31,11 @@ class GuestsController < ApplicationController
 
   def edit
     load_form_options
+    @change_events = ChangeEvent.for_target(@guest).where(wedding_id: current_wedding.id).limit(10)
   end
 
   def update
+    @guest.change_event_actor = current_user
     if @guest.update(guest_params)
       redirect_to guests_path(tab: "individuals"), notice: "ゲストを保存しました。", status: :see_other
     else
@@ -44,6 +47,7 @@ class GuestsController < ApplicationController
   end
 
   def destroy
+    @guest.change_event_actor = current_user
     @guest.destroy!
     redirect_to guests_path(tab: "individuals"), notice: "ゲストを削除しました。", status: :see_other
   end

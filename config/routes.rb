@@ -22,5 +22,15 @@ Rails.application.routes.draw do
   resources :budget_items, only: %i[index new create edit update destroy] do
     resources :money_movements, only: %i[new create edit update destroy]
   end
+  resources :planning_items do
+    resources :planning_options, only: %i[create]
+  end
+  resources :planning_options, only: %i[edit update destroy] do
+    post :select, on: :member
+    post :reject, on: :member
+    resource :music_detail, only: %i[create update]
+  end
+  resources :planning_cost_links, only: %i[create destroy]
+  resources :task_planning_links, only: %i[create destroy]
   root "dashboard#show"
 end

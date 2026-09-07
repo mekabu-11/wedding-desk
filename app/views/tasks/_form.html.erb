@@ -4,7 +4,7 @@
 <div class="field"><%= f.label :title, "やること" %><%= f.text_field :title, required: true, maxlength: 150 %></div>
 <div class="form-grid">
 <div class="field"><%= f.label :status, "状態" %><%= f.select :status, Task::STATUSES.map { |k,v| [v,k] } %></div>
-<div class="field"><%= f.label :assignee, "担当" %><%= f.select :assignee, Task::ASSIGNEES.map { |k,v| [v,k] } %></div>
+<div class="field"><%= f.label :assignee, "担当" %><%= f.select :assignee, Task.assignee_options(task.wedding) %></div>
 </div>
 <div class="form-grid">
 <div class="field"><%= f.label :starts_on, "開始日" %><%= f.date_field :starts_on %></div>
