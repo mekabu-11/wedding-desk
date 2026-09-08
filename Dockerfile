@@ -1,5 +1,5 @@
 FROM ruby:3.4-slim
-RUN apt-get update -qq && apt-get install -y --no-install-recommends build-essential libpq-dev curl && rm -rf /var/lib/apt/lists/*
+RUN apt-get update -qq && apt-get install -y --no-install-recommends build-essential libpq-dev curl file libvips-tools libheif1 poppler-utils && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 ENV BUNDLE_PATH=/usr/local/bundle
 COPY Gemfile Gemfile.lock ./

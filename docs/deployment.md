@@ -29,6 +29,21 @@
 - Supabase Free は利用がない期間に停止することがある。常用開始後は、必要に応じて有料プランへ変更する。
 - 公開URLはRailsのログイン画面で保護されるが、共有端末ではログアウトする。
 
+### 添付ストレージ
+
+添付を本番で使う場合はSupabase StorageのS3互換エンドポイントを設定する。Active Storageの公開URLは利用者へ直接配らず、アプリの認証済み資料URLを経由する。
+
+```dotenv
+ACTIVE_STORAGE_SERVICE=supabase
+SUPABASE_STORAGE_ENDPOINT=https://<project-ref>.storage.supabase.co/storage/v1/s3
+SUPABASE_STORAGE_BUCKET=wedding-documents
+SUPABASE_STORAGE_REGION=us-east-1
+SUPABASE_STORAGE_ACCESS_KEY_ID=サーバー専用キー
+SUPABASE_STORAGE_SECRET_ACCESS_KEY=サーバー専用シークレット
+```
+
+S3キーはブラウザやGitへ出さない。本番で上記の値が揃わない場合、Active Storageの本番サービス初期化または添付保存が安全に失敗する。ローカルDockerでは`storage_data` named volumeへ保存するため、通常の`docker compose down`では添付を残せる。添付ファイルは1個20MB、1資料10個、合計50MB、画像40MP、PDF20ページまでである。
+
 ## バックアップ
 
 Supabase Free には自動バックアップがない。公開後は少なくとも月1回、Supabaseの Database Backups か `pg_dump` でバックアップを取得し、アプリの暗号化キーとは別に安全に保管する。暗号化キーを失うと、バックアップがあっても暗号化済みの本文は復元できない。

@@ -5,7 +5,7 @@ require "rails"
 require "active_model/railtie"
 require "active_job/railtie"
 require "active_record/railtie"
-# require "active_storage/engine"
+require "active_storage/engine"
 require "action_controller/railtie"
 # require "action_mailer/railtie"
 # require "action_mailbox/engine"
@@ -26,6 +26,7 @@ module WeddingDesk
     config.i18n.default_locale = :ja
     config.i18n.fallbacks = [:en]
     config.active_job.queue_adapter = :solid_queue
+    config.active_storage.draw_routes = false
     config.solid_queue.connects_to = { database: { writing: :queue } } unless Rails.env.test? || Rails.env.production?
     config.log_level = :info
     config.active_record.encryption.primary_key = ENV.fetch("AR_ENCRYPTION_PRIMARY_KEY") { "test-or-build-only" if Rails.env.test? || ENV["SECRET_KEY_BASE_DUMMY"] }

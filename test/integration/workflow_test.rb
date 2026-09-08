@@ -108,7 +108,7 @@ class WorkflowTest < ActionDispatch::IntegrationTest
     doc = own_wedding.documents.last
     assert doc
     refute doc.sample?
-    assert_equal "openai", doc.latest_run.provider
+    assert_nil doc.latest_run
   end
 
   test "accepting requires explicit original confirmation and deletion requires confirmation" do
@@ -130,7 +130,7 @@ class WorkflowTest < ActionDispatch::IntegrationTest
     data = { document: { source_type: "line", direction: "incoming", original_text: "提出をお願いします。" } }
     2.times { post documents_path, params: data }
     assert_equal 1, wedding.documents.count
-    assert_equal 1, wedding.documents.first.analysis_runs.count
+    assert_equal 0, wedding.documents.first.analysis_runs.count
   end
 
   test "HTML in original and AI output is escaped" do

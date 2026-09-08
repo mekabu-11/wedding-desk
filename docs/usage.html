@@ -26,10 +26,11 @@
       <a href="#login">1. ログイン</a>
       <a href="#dashboard">2. 概要を見る</a>
       <a href="#contact">3. 連絡を登録</a>
-      <a href="#review">4. 候補を確認</a>
-      <a href="#import">5. Excelデータ移行</a>
-      <a href="#planning">6. 検討・決定</a>
-      <a href="#daily">7. 毎日の使い方</a>
+      <a href="#attachments">4. 画像・PDFを添付</a>
+      <a href="#review">5. 候補を確認</a>
+      <a href="#import">6. Excelデータ移行</a>
+      <a href="#planning">7. 検討・決定</a>
+      <a href="#daily">8. 毎日の使い方</a>
     </nav>
 
     <main>
@@ -55,15 +56,23 @@
         <div class="cols"><article class="card"><h3>AI連携を設定している場合</h3><p>保存後にAIが要約とタスク候補を作ります。候補は確認するまでタスク一覧へ追加されません。</p></article><article class="card"><h3>AI連携を設定していない場合</h3><p>本文は資料として保存できます。操作の流れは「架空のサンプルで試す」から確認できます。</p></article></div>
       </section>
 
+      <section class="step" id="attachments">
+        <h2><span>4</span>画像・PDFを添付する</h2>
+        <p class="lead">本文がない資料も保存できます。スマホのカメラで撮影するか、端末から画像・PDFを複数選びます。</p>
+        <ol class="checklist"><li>「資料と連絡」から「＋ 連絡を登録」を開く</li><li>本文を貼り付けるか、画像・PDFを選ぶ</li><li>保存後、資料詳細の添付リンクから内容を確認する</li></ol>
+        <div class="tip"><strong>添付の上限</strong><br>JPEG・PNG・WebP・HEIC・HEIF・PDFを1資料10個まで。1ファイル20MB、合計50MB、画像40MP、PDF20ページまでです。SVGと暗号化PDFは保存できません。</div>
+        <div class="tip"><strong>外部AIへ送る条件</strong><br>「保存する」では送信しません。「保存してAI整理する」を選んだ場合だけ整理ジョブを作り、候補を確認してから反映します。元ファイルは公開URLで配布しません。</div>
+      </section>
+
       <section class="step" id="review">
-        <h2><span>4</span>候補を確認してタスクにする</h2>
+        <h2><span>5</span>候補を確認してタスクにする</h2>
         <p class="lead">資料の詳細画面では、左に原文、右に整理された候補が表示されます。期限・担当・内容が原文と合っているものだけ確認して追加します。</p>
         <div class="shot"><img src="screenshots/document-review.svg" alt="Wedding Deskの連絡確認画面のサンプル"><div class="caption">画面例：原文を見ながら、タスク候補の内容・期限・担当を確認</div></div>
         <div class="cols"><article class="card"><h3>確認して追加</h3><p>チェックした候補だけが「やること」に追加されます。確認前の候補は残るため、あとで戻れます。</p></article><article class="card"><h3>タスクの編集</h3><p>「やること」でタスクを開くと、タイトル・担当・期限・メモ・状態を変更できます。</p></article></div>
       </section>
 
       <section class="step" id="import">
-        <h2><span>5</span>Excelからタスクを移行する</h2>
+        <h2><span>6</span>Excelからタスクを移行する</h2>
         <p class="lead">付属の移行用JSONを使うと、Excelから整理したタスクをまとめて取り込めます。ゲスト・収支・BGMは画面から手動で登録します。</p>
         <div class="shot"><img src="screenshots/task-import.svg" alt="Wedding Deskのタスク取り込み画面のサンプル"><div class="caption">画面例：import_candidates.jsonを選び、内容を確認してから登録</div></div>
         <ol class="checklist"><li>「やること」→「データを取り込む」を開く</li><li><span class="key">import_candidates.json</span> を選び、「内容を確認する」を押す</li><li>元の担当名を「本人A」「本人B」「ふたり」に割り当てる</li><li>タスク・期限・状態を確認し、「確認したタスクを登録する」を押す</li></ol>
@@ -71,14 +80,14 @@
       </section>
 
       <section class="step" id="planning">
-        <h2><span>6</span>検討・決定を進める</h2>
+        <h2><span>7</span>検討・決定を進める</h2>
         <p class="lead">「検討・決定」から演出やBGMなどの項目を追加し、候補を複数登録します。採用時は費用の扱いを必ず選び、既存BudgetItemへのリンクや新しい支出を同時に保存できます。</p>
         <div class="cols"><article class="card"><h3>BGM</h3><p>BGMカテゴリでは候補ごとに希望曲A/B、決定曲、アーティスト、開始秒、シーン、元表記を登録できます。</p></article><article class="card"><h3>関連付け</h3><p>項目詳細から費用とタスクを追加・解除できます。リンクを解除してもBudgetItemや入出金履歴は削除されません。</p></article></div>
         <div class="tip"><strong>採用の変更</strong><br>採用候補を変えても以前のBudgetItemや入出金履歴は残ります。収支はBudgetItemを一度だけ集計します。</div>
       </section>
 
       <section class="step" id="daily">
-        <h2><span>7</span>毎日の使い方</h2>
+        <h2><span>8</span>毎日の使い方</h2>
         <p class="lead">新しい連絡が来たら資料として残し、候補を確認したらタスクにします。ふたりで同じ画面を見ることで、返信漏れや期限の見落としを減らせます。</p>
         <div class="cols"><article class="card"><h3>連絡が来た日</h3><ul><li>本文を「資料と連絡」に登録</li><li>期限や担当の候補を確認</li><li>必要なものだけタスクに追加</li></ul></article><article class="card"><h3>週に一度</h3><ul><li>期限超過のタスクを確認</li><li>担当と期限を見直す</li><li>終わったタスクを完了にする</li></ul></article></div>
         <div class="tip"><strong>スマホでも使えます</strong><br>公開後のRender URLをスマホのブラウザで開き、ホーム画面に追加するとアプリのように起動できます。データはPCと同じSupabaseに保存されます。</div>

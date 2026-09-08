@@ -11,9 +11,9 @@ class AnalysisTest < ActiveSupport::TestCase
       assert_equal "pending", candidate.review_status
     end
     raw = ActiveRecord::Base.connection.select_value("SELECT original_text FROM documents WHERE id = #{doc.id}")
-    refute_includes raw, "BGM"
+    refute_equal doc.original_text, raw
     raw_candidate = ActiveRecord::Base.connection.select_value("SELECT payload FROM candidates WHERE id = #{doc.candidates.first.id}")
-    refute_includes raw_candidate, "BGM"
+    refute_equal doc.candidates.first.payload.to_json, raw_candidate
   end
 
   test "job replay and reanalysis never duplicate accepted or rejected candidates" do

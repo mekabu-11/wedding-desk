@@ -68,15 +68,6 @@ class GiftAssignmentsController < ApplicationController
   end
 
   def create_or_update_budget_item!
-    item = @gift_assignment.budget_item || current_wedding.budget_items.new(
-      direction: "expense", category: "gift", title: "#{@gift_assignment.household.name}の引き出物",
-      amount_yen: @gift_assignment.total_price_yen, certainty: "estimate", inclusion: @gift_assignment.included? ? "included" : "excluded",
-      source_kind: "gift_assignment", source_id: @gift_assignment.id
-    )
-    item.amount_yen = @gift_assignment.total_price_yen if item.certainty == "estimate"
-    item.title = "#{@gift_assignment.household.name}の引き出物"
-    item.inclusion = @gift_assignment.included? ? "included" : "excluded"
-    item.save!
-    @gift_assignment.update!(budget_item: item) unless @gift_assignment.budget_item_id == item.id
+    GiftAssignmentBudgetItemSync.call!(@gift_assignment)
   end
 end

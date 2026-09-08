@@ -18,6 +18,8 @@ class Wedding < ApplicationRecord
   has_many :planning_cost_links, dependent: :destroy
   has_many :task_planning_links, dependent: :destroy
   has_many :change_events, dependent: :destroy
+  has_many :source_links, dependent: :destroy
+  has_many :change_sets, dependent: :destroy
   validate :valid_wedding_date
   def valid_wedding_date
     if wedding_date_before_type_cast.present? && wedding_date.nil?

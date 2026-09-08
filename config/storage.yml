@@ -1,0 +1,16 @@
+local:
+  service: Disk
+  root: <%= Rails.root.join("storage") %>
+
+test:
+  service: Disk
+  root: <%= Rails.root.join("tmp/storage") %>
+
+supabase:
+  service: S3
+  endpoint: <%= ENV["SUPABASE_STORAGE_ENDPOINT"] %>
+  access_key_id: <%= ENV["SUPABASE_STORAGE_ACCESS_KEY_ID"] %>
+  secret_access_key: <%= ENV["SUPABASE_STORAGE_SECRET_ACCESS_KEY"] %>
+  region: <%= ENV.fetch("SUPABASE_STORAGE_REGION", "us-east-1") %>
+  bucket: <%= ENV["SUPABASE_STORAGE_BUCKET"] %>
+  force_path_style: true

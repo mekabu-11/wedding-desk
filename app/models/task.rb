@@ -6,6 +6,7 @@ class Task < ApplicationRecord
   belongs_to :candidate, optional: true
   has_many :task_planning_links, dependent: :destroy
   has_many :planning_items, through: :task_planning_links
+  has_many :source_links, as: :target, dependent: :destroy
   encrypts :source_details
   serialize :source_details, coder: JSON
   before_validation :normalize_assignee

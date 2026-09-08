@@ -1,5 +1,15 @@
 # 検証記録
 
+## 2026-09-08：段階3（画像・PDF添付、出典、横断候補）
+
+- 架空の1px PNGで本文なし資料を保存し、Active Storage添付、Wedding外からのIDOR拒否、認証済みダウンロードの`private, no-store`を確認。
+- 空資料、SVG、壊れた画像・PDF、1ファイル上限、10個上限を統合テストで確認。最大値テストは定数を一時的に下げて実データを小さく保ち、実容量を作らない。
+- SourceLinkのWedding整合性、資料に属さない添付の拒否、資料削除後のTask保持と削除ChangeEventを確認。既存Taskの出典リンクはmigrationでbackfillする。
+- ChangeOperationの型別属性allowlist、未知属性、作成キー依存、根拠引用、添付所属、別Wedding対象、lock_version競合、依存不足、全体rollback、同じChangeSetの再適用を確認。
+- Dockerの空テストDBへ全migrationを初回適用し、段階3対象テスト（13 tests / 87 assertions）、全テスト（80 tests / 553 assertions）、`zeitwerk:check`、`git diff --check`を実行し、すべて成功。
+
+外部AIのResponses APIへの実送信はこの検証では行わない。現行のCrossDocumentAiアダプターは未設定時に送信せず失敗状態へ遷移する安全な境界であり、実プロバイダー接続、画像・PDFの外部送信、HEICの成功変換は未検証である。Dockerイメージにはlibvips・libheif・popplerの実行ファイルを含めるが、実在資料での解析精度は保証しない。
+
 ## 2026-09-08：段階2（検討・決定、BGM、関連付け、履歴）
 
 - 検討項目・候補・採用／見送り、BGM詳細、費用リンク、タスクリンク、別Wedding拒否を架空データの統合テストで確認。

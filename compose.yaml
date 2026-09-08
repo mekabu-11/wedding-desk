@@ -12,6 +12,7 @@ x-app: &app
     RAILS_LOG_LEVEL: info
   volumes:
     - .:/app
+    - storage_data:/app/storage
   depends_on:
     db:
       condition: service_healthy
@@ -39,3 +40,4 @@ services:
     command: ["bin/jobs"]
 volumes:
   postgres_data:
+  storage_data:

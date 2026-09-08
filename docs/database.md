@@ -65,3 +65,15 @@ User ─1:1─ Membership ─N:1─ Wedding ─1:N─ Document ─1:N─ Analysi
 ## 削除
 
 Document削除に伴いRunとCandidateを削除する。承認済みTaskは削除せずCandidate参照を外し、元資料が削除された日時と出典概要を保持する。バックアップや外部AIサービスに既に渡ったデータの削除とは別。運用環境のバックアップ保持期間は配置前に決める。
+
+## 段階3：添付資料と横断候補
+
+Documentは本文なしでも保存でき、Active Storageの`attachments`へ画像またはPDFを複数保持する。許可MIMEはJPEG/PNG/WebP/HEIC/HEIF/PDF、上限は1ファイル20MB・1資料10個・合計50MB・画像40MP・PDF20ページで、MIMEだけでなく画像の実デコードと`pdfinfo`によるページ数・暗号化状態を検証する。SVGと暗号化PDFは拒否する。元ファイルは非公開DiskまたはS3互換ストレージに置き、`DocumentAttachmentsController`がcurrent_weddingと資料の関連を確認してから`private, no-store`で返す。
+
+本番のS3互換設定は`ACTIVE_STORAGE_SERVICE=supabase`と`SUPABASE_STORAGE_ENDPOINT`、`SUPABASE_STORAGE_BUCKET`、`SUPABASE_STORAGE_REGION`、`SUPABASE_STORAGE_ACCESS_KEY_ID`、`SUPABASE_STORAGE_SECRET_ACCESS_KEY`だけで指定する。値が不足している本番ではDocumentの添付バリデーションが保存を拒否する。開発・テストはDiskで、Composeの`storage_data`ボリュームを利用する。
+
+資料の出典はSourceLink（資料、対象型・対象ID、任意の添付・ページ・引用・領域）で管理する。対象型と添付の所属Weddingをモデルで検証し、同じ対象への複数ページの根拠を許可する。資料削除時はSourceLinkと添付を削除するが、登録済みTaskは残し、削除イベントをChangeEventへ記録する。既存Taskの資料由来リンクはmigrationで安全にbackfillする。
+
+横断AIの候補はChangeSetとChangeOperationへ暗号化して保存する。ChangeOperationは型ごとの属性allowlist、enum、最大長、根拠、依存関係、更新時の`expected_lock_version`を検証する。作成した候補への参照は`*_key`を同じChangeSet内で解決し、Wedding ID・利用者ID・版番号は候補属性から指定できない。link操作はSourceLink、PlanningCostLink、TaskPlanningLinkに限定する。反映時は対象レコードをロックしてから版番号を比較し、候補全体を1トランザクションで適用する。競合・根拠不一致・途中失敗は全件を反映しない。同じoperation_keyの再適用は既存結果を返す。
+
+外部AIへ送る処理は「AIで整理」を明示的に選択したジョブだけに限定する。保存・手動確認では送信しない。候補から入出金履歴、採用・確定金額、削除、画像だけの出欠確定は作成できない。

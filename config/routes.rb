@@ -8,8 +8,13 @@ Rails.application.routes.draw do
   resource :membership, only: :create
   resources :documents, only: %i[index new create show destroy] do
     post :retry_analysis, on: :member
+    post :organize, on: :member
     post :sample, on: :collection
+    resources :attachments, only: :show, controller: "document_attachments"
     resources :candidates, only: :update
+  end
+  resources :change_sets, only: :show do
+    post :apply, on: :member
   end
   resources :tasks, only: %i[index new create edit update]
   resources :task_imports, only: %i[new create show update]

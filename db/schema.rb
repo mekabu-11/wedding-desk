@@ -10,9 +10,38 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_08_000008) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_08_000009) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "active_storage_attachments", force: :cascade do |t|
+    t.bigint "blob_id", null: false
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.bigint "record_id", null: false
+    t.string "record_type", null: false
+    t.index ["blob_id"], name: "index_active_storage_attachments_on_blob_id"
+    t.index ["record_type", "record_id", "name", "blob_id"], name: "index_active_storage_attachments_uniqueness", unique: true
+  end
+
+  create_table "active_storage_blobs", force: :cascade do |t|
+    t.bigint "byte_size", null: false
+    t.string "checksum"
+    t.string "content_type"
+    t.datetime "created_at", null: false
+    t.string "filename", null: false
+    t.string "key", null: false
+    t.text "metadata"
+    t.string "service_name", null: false
+    t.index ["key"], name: "index_active_storage_blobs_on_key", unique: true
+  end
+
+  create_table "active_storage_variant_records", force: :cascade do |t|
+    t.bigint "blob_id", null: false
+    t.string "variation_digest", null: false
+    t.index ["blob_id", "variation_digest"], name: "idx_on_blob_id_variation_digest_f36bede0d9", unique: true
+    t.index ["blob_id"], name: "index_active_storage_variant_records_on_blob_id"
+  end
 
   create_table "analysis_runs", force: :cascade do |t|
     t.integer "attempt", default: 0, null: false
@@ -107,18 +136,60 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_08_000008) do
     t.index ["wedding_id"], name: "index_change_events_on_wedding_id"
   end
 
+  create_table "change_operations", force: :cascade do |t|
+    t.string "action", null: false
+    t.text "after_data"
+    t.text "attributes_data"
+    t.text "before_data"
+    t.bigint "change_set_id", null: false
+    t.datetime "created_at", null: false
+    t.text "depends_on_data"
+    t.string "entity_type", null: false
+    t.text "error"
+    t.text "evidence_data"
+    t.integer "expected_lock_version"
+    t.string "operation_key", null: false
+    t.string "state", default: "pending", null: false
+    t.bigint "target_id"
+    t.text "uncertainties_data"
+    t.datetime "updated_at", null: false
+    t.index ["change_set_id", "operation_key"], name: "index_change_operations_on_change_set_id_and_operation_key", unique: true
+    t.index ["change_set_id"], name: "index_change_operations_on_change_set_id"
+    t.check_constraint "action::text = ANY (ARRAY['create'::character varying::text, 'update'::character varying::text, 'link'::character varying::text])", name: "change_operations_valid_action"
+    t.check_constraint "state::text = ANY (ARRAY['pending'::character varying::text, 'applied'::character varying::text, 'failed'::character varying::text])", name: "change_operations_valid_state"
+  end
+
+  create_table "change_sets", force: :cascade do |t|
+    t.bigint "actor_id"
+    t.datetime "created_at", null: false
+    t.bigint "document_id", null: false
+    t.text "error"
+    t.string "operation_key", null: false
+    t.string "state", default: "pending", null: false
+    t.text "summary"
+    t.datetime "updated_at", null: false
+    t.bigint "wedding_id", null: false
+    t.index ["actor_id"], name: "index_change_sets_on_actor_id"
+    t.index ["document_id"], name: "index_change_sets_on_document_id"
+    t.index ["wedding_id", "operation_key"], name: "index_change_sets_on_wedding_id_and_operation_key", unique: true
+    t.index ["wedding_id"], name: "index_change_sets_on_wedding_id"
+    t.check_constraint "state::text = ANY (ARRAY['pending'::character varying::text, 'applied'::character varying::text, 'failed'::character varying::text])", name: "change_sets_valid_state"
+  end
+
   create_table "documents", force: :cascade do |t|
     t.string "content_hash", null: false
     t.datetime "created_at", null: false
     t.string "direction", default: "unknown", null: false
+    t.text "memo"
     t.datetime "occurred_at"
-    t.text "original_text", null: false
+    t.text "original_text"
     t.boolean "sample", default: false, null: false
     t.string "source_type", null: false
     t.string "title", null: false
     t.datetime "updated_at", null: false
     t.bigint "wedding_id", null: false
     t.index ["wedding_id", "content_hash"], name: "index_documents_on_wedding_id_and_content_hash", unique: true
+    t.index ["wedding_id", "created_at"], name: "index_documents_on_wedding_id_and_created_at"
     t.index ["wedding_id"], name: "index_documents_on_wedding_id"
   end
 
@@ -463,6 +534,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_08_000008) do
     t.index ["key"], name: "index_solid_queue_semaphores_on_key", unique: true
   end
 
+  create_table "source_links", force: :cascade do |t|
+    t.bigint "attachment_id"
+    t.datetime "created_at", null: false
+    t.bigint "document_id", null: false
+    t.integer "page"
+    t.text "quote"
+    t.text "region"
+    t.bigint "target_id", null: false
+    t.string "target_type", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "wedding_id", null: false
+    t.index ["document_id", "target_type", "target_id"], name: "index_source_links_on_document_target"
+    t.index ["document_id"], name: "index_source_links_on_document_id"
+    t.index ["wedding_id", "target_type", "target_id"], name: "index_source_links_on_target"
+    t.index ["wedding_id"], name: "index_source_links_on_wedding_id"
+  end
+
   create_table "task_imports", force: :cascade do |t|
     t.datetime "committed_at"
     t.datetime "created_at", null: false
@@ -539,6 +627,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_08_000008) do
     t.date "wedding_date"
   end
 
+  add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "analysis_runs", "documents"
   add_foreign_key "budget_items", "weddings"
   add_foreign_key "candidates", "analysis_runs"
@@ -546,6 +636,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_08_000008) do
   add_foreign_key "cash_gift_rules", "weddings"
   add_foreign_key "change_events", "users", column: "actor_id"
   add_foreign_key "change_events", "weddings"
+  add_foreign_key "change_operations", "change_sets"
+  add_foreign_key "change_sets", "documents"
+  add_foreign_key "change_sets", "users", column: "actor_id"
+  add_foreign_key "change_sets", "weddings"
   add_foreign_key "documents", "weddings"
   add_foreign_key "gift_assignments", "budget_items"
   add_foreign_key "gift_assignments", "gift_sets"
@@ -579,6 +673,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_08_000008) do
   add_foreign_key "solid_queue_ready_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_recurring_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_scheduled_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
+  add_foreign_key "source_links", "active_storage_attachments", column: "attachment_id"
+  add_foreign_key "source_links", "documents"
+  add_foreign_key "source_links", "weddings"
   add_foreign_key "task_imports", "weddings"
   add_foreign_key "task_planning_links", "planning_items"
   add_foreign_key "task_planning_links", "tasks"
