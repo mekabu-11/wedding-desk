@@ -1,0 +1,30 @@
+<section class="gantt-section">
+  <div class="section-heading">
+    <div><h2>スケジュール</h2><p class="muted"><%= @range_start.strftime("%Y/%m/%d") %>〜<%= @range_end.strftime("%Y/%m/%d") %></p></div>
+    <div class="task-actions">
+      <%= link_to "前へ", tasks_path(request.query_parameters.merge(view: "gantt", anchor: (@range_start - (@range == "month" ? 1.month : 1.week)).iso8601)), class: "button secondary" %>
+      <%= link_to "週", tasks_path(request.query_parameters.merge(view: "gantt", range: "week", anchor: @anchor.iso8601)), class: "button #{@range == 'week' ? 'primary' : 'secondary'}" %>
+      <%= link_to "月", tasks_path(request.query_parameters.merge(view: "gantt", range: "month", anchor: @anchor.iso8601)), class: "button #{@range == 'month' ? 'primary' : 'secondary'}" %>
+      <%= link_to "次へ", tasks_path(request.query_parameters.merge(view: "gantt", anchor: (@range_start + (@range == "month" ? 1.month : 1.week)).iso8601)), class: "button secondary" %>
+    </div>
+  </div>
+  <% if @gantt_limit_exceeded %><p class="flash flash-alert">表示対象が2000件を超えています。条件を追加してください。</p><% end %>
+  <div class="gantt-scroll">
+    <div class="gantt-board <%= @range %> days-<%= (@range_end - @range_start).to_i + 1 %>">
+      <div class="gantt-label gantt-header-label">タスク</div>
+      <div class="gantt-timeline gantt-header">
+        <% (@range_start..@range_end).each do |day| %><div class="<%= 'today' if day == Date.current %>"><span><%= day.strftime("%-m/%-d") %></span><small><%= %w[日 月 火 水 木 金 土][day.wday] %></small></div><% end %>
+      </div>
+      <% @gantt_tasks.each do |task| %>
+        <% raw_start = task.starts_on || task.due_on || task.due_at&.to_date; raw_end = task.due_on || task.due_at&.to_date || task.starts_on; start_on = [raw_start, @range_start].max; end_on = [raw_end, @range_end].min; column = (start_on - @range_start).to_i + 1; span = (end_on - start_on).to_i + 1; due_only = task.starts_on.blank? && (task.due_on || task.due_at).present? %>
+        <%= link_to edit_task_path(task), class: "gantt-label" do %><strong><%= task.title %></strong><small><%= task.assignee_label %></small><% end %>
+        <div class="gantt-timeline gantt-row-timeline">
+          <% ((@range_end - @range_start).to_i + 1).times do |index| %><span class="<%= 'today' if @range_start + index == Date.current %>"></span><% end %>
+          <%= link_to edit_task_path(task), class: "gantt-bar #{'marker' if due_only} column-#{column} span-#{span}", title: "#{raw_start}〜#{raw_end}" do %><span><%= due_only ? "◆" : Task::STATUSES[task.status] %></span><% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+  <% if @gantt_tasks.empty? %><div class="empty-state compact"><p>この期間に日付が重なるタスクはありません。</p></div><% end %>
+  <% if @undated_tasks.any? %><div class="undated-list"><h3>日付なし</h3><% @undated_tasks.each do |task| %><%= render "row", task: task %><% end %></div><% end %>
+</section>

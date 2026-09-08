@@ -19,3 +19,4 @@
 </section>
 
 <div class="document-actions"><%= button_to "ログアウト", session_path, method: :delete, class: "button secondary" %></div>
+<section class="surface narrow settings-links"><h2>データ</h2><p class="muted">現在のWeddingの業務データをUTF-8 BOM付きCSVで保存します。添付原本は含みません。</p><div class="task-actions"><%= link_to "CSVをZIPでエクスポート", wedding_export_path, class: "button secondary" %><%= link_to "ヘルプを開く", help_path, class: "button secondary" %></div></section>

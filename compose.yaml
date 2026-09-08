@@ -1,6 +1,7 @@
 name: wedding-desk-github
 x-app: &app
   build: .
+  image: wedding-desk-github-app
   env_file:
     - path: .env
       required: false

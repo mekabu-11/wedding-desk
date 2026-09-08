@@ -16,7 +16,11 @@ Rails.application.routes.draw do
   resources :change_sets, only: :show do
     post :apply, on: :member
   end
-  resources :tasks, only: %i[index new create edit update]
+  resources :tasks, only: %i[index new create edit update] do
+    post :bulk_preview, on: :collection
+    post :bulk_update, on: :collection
+  end
+  get "wedding/export", to: "exports#show", as: :wedding_export
   resources :task_imports, only: %i[new create show update]
   resources :spreadsheet_imports, only: %i[new create show update]
   resources :guests, only: %i[index new create edit update destroy]

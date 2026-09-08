@@ -1,6 +1,6 @@
 # Wedding Desk 実装確定設計 v1
 
-作成: 2026-09-07。状態: 設計・引継ぎ用。追加機能は未実装。
+作成: 2026-09-07。更新: 2026-09-09。状態: Phase 0〜4B実装済み。外部AI送信と本番公開は未完了。
 対象リポジトリ: `/Users/zunya/Documents/GitHub/wedding-desk`
 
 ## 1. 目的・優先順位
@@ -14,12 +14,12 @@
 ## 2. 実装基盤と実際の現状
 
 - Rails 8.1 / Ruby 3.4 / PostgreSQL / Docker / ERB / Solid Queueを継続。フロントエンドの別フレームワークへの移行はしない。
-- 配置構成は既存のRender用設定＋Supabase PostgreSQLを継続。実際の稼働状況・契約プランは今回未確認。Vercelへの移設は本範囲に含めない。
-- 現行: ログイン、結婚式情報、手動タスク、担当・状態・今週・期限超過フィルタ、資料本文登録、AIタスク候補、JSONタスク移行、ヘルプ。
-- 未実装: 2アカウント共有、ゲスト、世帯、収支、検討・決定、画像添付、ガント、複数領域AI、xlsx全体移行。
-- 現行 `User has_one Wedding` は共有不可。Membershipへ移行する。
-- 現行 `Document → Candidate → Task` は連動削除。確定済み業務データが資料削除で消えない構造へ変更する。
-- `config/storage.yml` は現状なし。画像の永続保存は新規整備が必要。
+- 配置構成はRender用設定＋Supabase PostgreSQL/Storageを用意済み。実際の公開環境と契約プランは未確認。VercelはRailsサーバーと常駐workerの直接配置先には使わない。
+- 実装済み: 2アカウント共有、ゲスト・世帯・席次・引き出物、収支と入出金、検討・決定とBGM、非公開添付、xlsx全体移行、タスク検索・ガント・一括変更、ホーム集計、CSV ZIP出力。
+- Membershipへ移行済み。1Wedding最大2人をWeddingロック下で保証する。
+- 資料削除時は確定済みTaskを残し、出典情報をSourceLinkとTask内のスナップショットへ保持する。
+- Active Storageを整備済み。ローカルはnamed volume、本番はSupabase S3互換ストレージを使用する。
+- 外部AIへ本文・画像・PDFを送るアダプターは未実装。現在は送信しないスタブで安全に失敗する。
 
 ## 3. 画面と責務
 
@@ -226,4 +226,6 @@ AIテストはスタブ＋架空画像/本文で通常実行。実API試験は�
 
 今回読み取り: 現行models/controllers/migrations、routes、Gemfile、Analysis::OpenaiClient、ReviewCandidate、既存拡張設計・database・deployment文書。Git statusは確認時空。
 
-Excel構造・数式・件数は本会話の読取検査と既存設計の検査記録に基づく。過去回答の「今週未対応」「世帯99件」「全件検索実装済み」は採用しない。今回は設計文書のみ作成し、アプリ変更・テスト実行・デプロイはしていない。
+Excel構造・数式・件数は本会話の読取検査と既存設計の検査記録に基づく。過去回答の「今週未対応」「世帯99件」「全件検索実装済み」は採用しない。
+
+Phase 0〜4Bを実装し、Docker上で91テスト・650 assertionsとZeitwerk検査を通過。実Excel 2ファイルはrollback付きdry-runで295件を分類し、MoneyMovementは0件であることを確認した。390pxとデスクトップ幅で概要・タスク・ガントを架空データにより目視確認した。本番デプロイと実機スマホは未確認。

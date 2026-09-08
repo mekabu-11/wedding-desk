@@ -1,0 +1,8 @@
+<%= link_to "← やること", tasks_path, class: "back-link" %>
+<header class="page-heading"><div><p class="eyebrow">BULK EDIT</p><h1>一括変更の確認</h1><p><%= @tasks.size %>件を確認してから、指定した項目だけを変更します。</p></div></header>
+<section class="surface narrow"><%= form_with url: bulk_update_tasks_path, method: :post, class: "form-stack" do %>
+  <div class="form-grid"><div class="field"><%= label_tag :status, "状態（変更する時だけ選択）" %><%= select_tag :status, options_for_select([['変更しない','']] + Task::STATUSES.map { |k,v| [v,k] }) %></div><div class="field"><%= label_tag :assignee, "担当（変更する時だけ選択）" %><%= select_tag :assignee, options_for_select([['変更しない','']] + Task.assignee_options(@tasks.first.wedding)) %></div></div>
+  <div class="field"><%= label_tag :category, "カテゴリ（変更する時だけ選択）" %><%= select_tag :category, options_for_select([['変更しない','']] + Task::CATEGORIES.map { |k,v| [v,k] }) %></div>
+  <div class="surface list-surface"><% @tasks.each do |task| %><div class="task-row"><div class="row-content"><strong><%= task.title %></strong><span class="micro"><%= task.assignee_label %> / <%= Task::STATUSES[task.status] %></span></div><%= hidden_field_tag "items[#{task.id}]", task.lock_version %></div><% end %></div>
+  <p class="callout">全件を同じtransactionで更新します。途中でlock_versionが変わった場合は全件rollbackします。</p><%= submit_tag "確認して一括保存", class: "button primary" %>
+<% end %></section>
