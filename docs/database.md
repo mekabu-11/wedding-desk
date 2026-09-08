@@ -6,6 +6,10 @@ Taskのcandidate_idはnullable化した。origin=aiでは従来どおり必須�
 
 TaskImportはWeddingに所属し、暗号化したrowsとdigest、pending/committed、追加/スキップ件数を持つ。確認時はバッチとWeddingをロックし、タスク追加と結果を一括コミットする。ゲスト等の非タスク行は保存しない。本文および元ファイル名等の出典をSQLで直接平文投入しない。
 
+SpreadsheetImportBatch/SpreadsheetImportRowは初回xlsx移行のプレビューと反映履歴を保持する。batchはWedding・ファイルdigest・mapping_version、rowはシート・行・種別・source_key・暗号化した元情報/警告/エラー・反映先を持つ。source_keyの一意性はbatch内に限定し、同じWeddingへの再取込はbatch digestで防ぐ。反映はmaster→世帯→ゲスト→引出物→収支→タスク→BGMの順に一つのtransactionで行い、参照未解決や検証失敗は全体をrollbackする。
+
+xlsxはZIP/XMLとして読み取り、数式・外部リンク・マクロを実行しない。1ファイル25MB、展開後100MB、合計10,000行までで、zip slip・異常圧縮率・壊れた構造を拒否する。実績額や日付不明の金額は確定せず、MoneyMovementも作らない。
+
 以下は既存AIフローの構成。
 
 ## 段階1：ゲストと収支の基盤（2026-09-08）

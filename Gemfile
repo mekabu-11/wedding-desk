@@ -8,6 +8,8 @@ gem "bcrypt", "~> 3.1"
 gem "aws-sdk-s3", "~> 1.150"
 gem "image_processing", "~> 1.13"
 gem "ruby-vips", "~> 2.2"
+gem "rubyzip", "~> 2.4"
+gem "nokogiri", "~> 1.18"
 gem "solid_queue", "~> 1.3"
 gem "json_schemer", "~> 2.4"
 gem "bootsnap", require: false

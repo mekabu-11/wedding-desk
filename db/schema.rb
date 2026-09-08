@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_08_000009) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_08_000010) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -551,6 +551,49 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_08_000009) do
     t.index ["wedding_id"], name: "index_source_links_on_wedding_id"
   end
 
+  create_table "spreadsheet_import_batches", force: :cascade do |t|
+    t.datetime "committed_at"
+    t.datetime "created_at", null: false
+    t.string "digest", null: false
+    t.integer "imported_count", default: 0, null: false
+    t.string "mapping_version", null: false
+    t.integer "row_count", default: 0, null: false
+    t.integer "skipped_count", default: 0, null: false
+    t.text "source_metadata"
+    t.string "state", default: "pending", null: false
+    t.datetime "updated_at", null: false
+    t.integer "warning_count", default: 0, null: false
+    t.text "warnings"
+    t.bigint "wedding_id", null: false
+    t.index ["wedding_id", "digest"], name: "index_spreadsheet_import_batches_on_wedding_id_and_digest", unique: true
+    t.index ["wedding_id"], name: "index_spreadsheet_import_batches_on_wedding_id"
+    t.check_constraint "state::text = ANY (ARRAY['pending'::character varying::text, 'committed'::character varying::text, 'failed'::character varying::text])", name: "spreadsheet_import_batches_valid_state"
+  end
+
+  create_table "spreadsheet_import_rows", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "error"
+    t.text "mapping_label"
+    t.text "original_data"
+    t.string "row_kind", null: false
+    t.integer "row_number", null: false
+    t.string "sheet_name", null: false
+    t.string "source_key", null: false
+    t.bigint "spreadsheet_import_batch_id", null: false
+    t.string "state", default: "pending", null: false
+    t.bigint "target_id"
+    t.string "target_type"
+    t.datetime "updated_at", null: false
+    t.text "warnings"
+    t.bigint "wedding_id", null: false
+    t.index ["spreadsheet_import_batch_id", "row_kind", "row_number"], name: "index_spreadsheet_import_rows_position", unique: true
+    t.index ["spreadsheet_import_batch_id", "source_key"], name: "index_spreadsheet_import_rows_on_batch_and_source_key", unique: true
+    t.index ["spreadsheet_import_batch_id"], name: "index_spreadsheet_import_rows_on_spreadsheet_import_batch_id"
+    t.index ["wedding_id", "state"], name: "index_spreadsheet_import_rows_on_wedding_id_and_state"
+    t.index ["wedding_id"], name: "index_spreadsheet_import_rows_on_wedding_id"
+    t.check_constraint "state::text = ANY (ARRAY['pending'::character varying::text, 'ready'::character varying::text, 'skipped'::character varying::text, 'conflict'::character varying::text, 'invalid'::character varying::text, 'imported'::character varying::text])", name: "spreadsheet_import_rows_valid_state"
+  end
+
   create_table "task_imports", force: :cascade do |t|
     t.datetime "committed_at"
     t.datetime "created_at", null: false
@@ -676,6 +719,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_08_000009) do
   add_foreign_key "source_links", "active_storage_attachments", column: "attachment_id"
   add_foreign_key "source_links", "documents"
   add_foreign_key "source_links", "weddings"
+  add_foreign_key "spreadsheet_import_batches", "weddings"
+  add_foreign_key "spreadsheet_import_rows", "spreadsheet_import_batches"
+  add_foreign_key "spreadsheet_import_rows", "weddings"
   add_foreign_key "task_imports", "weddings"
   add_foreign_key "task_planning_links", "planning_items"
   add_foreign_key "task_planning_links", "tasks"

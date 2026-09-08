@@ -18,6 +18,7 @@ Rails.application.routes.draw do
   end
   resources :tasks, only: %i[index new create edit update]
   resources :task_imports, only: %i[new create show update]
+  resources :spreadsheet_imports, only: %i[new create show update]
   resources :guests, only: %i[index new create edit update destroy]
   resources :households, only: %i[new create edit update destroy]
   resources :seating_tables, only: %i[new create edit update destroy]

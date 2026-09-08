@@ -42,6 +42,13 @@
 - ブラウザで一時アカウントを使い390px幅の手動追加と1280px幅のプレビュー・登録を確認。横はみ出しなし。確認用データは削除済み。
 - Railsのzeitwerk:check成功。利用者の45件の本登録とスマホ実機検証は未実施。
 
+## Phase 4A：xlsx全体移行
+
+- 架空xlsxをRubyZip/Nokogiriで生成する対象テストを追加し、テンプレート識別、派生シート除外、数式非実行、同一digest再取込防止、zip slip/壊れたxlsx拒否、行単位警告、Weddingスコープ、transaction rollback、世帯・引出物・BGM・金額未確認を検証する。
+- 反映順はマスタ→世帯→ゲスト→引出物→収支→タスク→BGM。実績額・日付不明の入出金からconfirmed/MoneyMovementを作らず、Taskのsource_keyは既存JSON取り込みと同じ出典キー式を使う。
+- 実際の2ブックは読み取り専用dry-runで構造・件数・警告数のみ確認する。氏名・金額・抽出JSONはリポジトリへ保存せず、DB反映もしない。
+- 実ファイルのdry-runは合計295行（task 45、bgm 20、budget_item 46、cash_gift_rule 7、gift_assignment 54、gift_set 5、guest 64、household 54）、行単位警告225件（警告メッセージ種別6）として確認した。表記揺れ修正後、cached単価候補を持つギフトセットは5件、transaction rollback内の確認済み反映で割当候補54件を確認した。出力はこの件数だけに限定し、永続反映は行っていない。
+
 以下は当初MVPの検証記録。
 
 検証日：2026-09-06。ローカルのDocker Desktop / Compose v2.40.3、ARM64。

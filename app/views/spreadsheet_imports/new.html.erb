@@ -1,0 +1,11 @@
+<%= link_to "← やること", tasks_path, class: "back-link" %>
+<header class="page-heading"><div><p class="eyebrow">FIRST EXCEL MIGRATION</p><h1>Excelをまとめて移行</h1><p>2つの管理表を同時に選び、統合プレビューを確認してから登録します。</p></div></header>
+<section class="surface narrow">
+  <div class="callout"><strong>外部送信なし・数式は実行しません</strong><p>Excelはサーバー内でXMLとして読み取ります。数式のキャッシュ値、実績額、日付不明の入出金は確定扱いにしません。元ファイルの内容は確認後も手元に保管してください。</p></div>
+  <%= form_with url: spreadsheet_imports_path, multipart: true, class: "form-stack" do |f| %>
+    <div class="field"><%= f.label :files, "Excelファイル（最大2個・各25MB）" %><%= f.file_field :files, multiple: true, accept: ".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", required: true %><small>結婚式タスク管理表と結婚式管理表をまとめて選択してください。展開後100MB、合計10,000行まで。</small></div>
+    <%= f.submit "統合プレビューを作成", class: "button primary" %>
+  <% end %>
+</section>
+<section class="surface narrow"><h2>旧JSON取り込み</h2><p class="muted">既存の移行用JSONも引き続き利用できます。</p><%= link_to "JSON取り込みを開く", new_task_import_path, class: "text-link" %></section>
+<section class="import-history"><h2>最近のExcel移行</h2><% if @batches.empty? %><p class="muted">取り込み履歴はまだありません。</p><% end %><% @batches.each do |batch| %><p><%= link_to "#{batch.created_at.in_time_zone.strftime('%Y/%m/%d %H:%M')} · #{batch.row_count}行 · #{batch.state == 'committed' ? '反映済み' : '確認待ち'}", spreadsheet_import_path(batch) %></p><% end %></section>
