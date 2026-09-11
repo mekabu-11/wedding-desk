@@ -1,6 +1,6 @@
 class PlanningOptionsController < ApplicationController
   before_action :set_planning_item_from_nested, only: :create
-  before_action :set_option, only: %i[edit update destroy select reject]
+  before_action :set_option, only: %i[edit update destroy select reject restore]
 
   def create
     @option = @planning_item.planning_options.new(option_params.merge(wedding: current_wedding))
@@ -66,6 +66,20 @@ class PlanningOptionsController < ApplicationController
     ChangeEvent.record!(wedding: current_wedding, target: @option, action: "planning_option_rejected",
       before: { status: before }.to_json, after: { status: "rejected" }.to_json, source: "manual", actor: current_user) if before != "rejected"
     redirect_to planning_item_path(@option.planning_item), notice: "候補を見送りました。", status: :see_other
+  end
+
+  def restore
+    unless @option.rejected?
+      return redirect_to planning_item_path(@option.planning_item), alert: "見送り中の候補だけを検討中に戻せます。", status: :see_other
+    end
+
+    before = @option.status
+    @option.update!(status: "considering")
+    ChangeEvent.record!(wedding: current_wedding, target: @option, action: "planning_option_restored",
+      before: { status: before }.to_json, after: { status: "considering" }.to_json, source: "manual", actor: current_user)
+    redirect_to planning_item_path(@option.planning_item), notice: "候補を検討中に戻しました。", status: :see_other
+  rescue ActiveRecord::StaleObjectError
+    redirect_to edit_planning_option_path(@option), alert: "別の操作で更新されています。最新の内容を確認してください。"
   end
 
   def destroy

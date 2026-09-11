@@ -33,7 +33,11 @@
             <p class="micro">候補の採用だけを変更します。やること・費用は下で別に関連付けます。候補に自動作成された概算費用が残っている場合だけ、入出金履歴がなければ除外して履歴を残します。</p>
             <%= submit_tag "この候補を採用", class: "button primary" %>
           </form>
-          <%= button_to "見送る", reject_planning_option_path(option), method: :post, class: "button secondary" %>
+          <% if option.rejected? %>
+            <%= button_to "検討に戻す", restore_planning_option_path(option), method: :post, class: "button secondary" %>
+          <% else %>
+            <%= button_to "見送る", reject_planning_option_path(option), method: :post, class: "button secondary" %>
+          <% end %>
         <% end %>
       </div>
       <% if @planning_item.category == "music" %><details style="margin-top:16px"><summary>BGM情報を編集</summary><%= render "music_form", option: option %></details><% end %>

@@ -6,7 +6,16 @@
   <div class="field"><%= f.label :title, "項目名" %><%= f.text_field :title, required: true, maxlength: 150 %></div>
   <div class="form-grid">
     <div class="field"><%= f.label :direction, "収支" %><%= f.select :direction, BudgetItem::DIRECTIONS.map { |k,v| [v,k] } %></div>
-    <div class="field"><%= f.label :category, "カテゴリ" %><%= f.text_field :category, required: true, maxlength: 80, placeholder: "例：会場" %></div>
+    <div class="field">
+      <%= f.label :category, "カテゴリ" %>
+      <% if budget_item.source_kind == "manual" %>
+        <%= f.text_field :category, required: true, maxlength: 80, placeholder: "例：会場" %>
+      <% else %>
+        <div class="readonly-field"><%= budget_category_label(budget_item.category) %></div>
+        <%= f.hidden_field :category %>
+        <small>元データから作成された明細のため、カテゴリは自動管理しています。</small>
+      <% end %>
+    </div>
   </div>
   <div class="form-grid">
     <div class="field"><%= f.label :amount_yen, "金額（円）" %><%= f.number_field :amount_yen, min: 0, step: 1 %></div>

@@ -88,6 +88,8 @@ class GuestBudgetTest < ActionDispatch::IntegrationTest
     assert_equal 1, @wedding.budget_items.where(source_kind: "cash_gift", source_id: household.id).count
     item = household.cash_gift_budget_item
     assert_equal 100_000, item.amount_yen
+    get edit_budget_item_path(item)
+    assert_select ".readonly-field", text: "ご祝儀"
     item.update!(certainty: "confirmed", amount_yen: 120_000)
     @rule.update!(default_amount_yen: 150_000)
     household.ensure_cash_gift_budget_item!

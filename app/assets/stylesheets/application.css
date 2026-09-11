@@ -606,3 +606,6 @@ html[data-theme="dark"] .list-surface .task-row,html[data-theme="dark"] .list-su
   .gantt-period-caption{gap:5px}
 }
 .decision-summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:22px}.decision-summary-grid>div{padding:17px;background:#f7f9f5;border-radius:8px}.decision-summary-grid p:not(.eyebrow):not(.micro){font-size:13px;margin-top:8px}.decision-summary .section-heading{margin-bottom:0}@media(max-width:760px){.decision-summary-grid{grid-template-columns:1fr;gap:13px}}
+.narrow{width:100%;margin-inline:auto}
+.readonly-field{display:flex;align-items:center;min-height:44px;width:100%;padding:11px 12px;border:1px solid #d7dfd7;border-radius:6px;background:var(--soft);color:var(--ink);font-size:13px}
+html[data-theme="dark"] .readonly-field{border-color:var(--line)}

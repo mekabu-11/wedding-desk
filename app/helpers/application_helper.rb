@@ -78,6 +78,10 @@ module ApplicationHelper
     { "unsettled" => :warning, "partial" => :warning, "completed" => :positive, "unknown" => :muted, "overpaid" => :negative }.fetch(status_key.to_s, :muted)
   end
 
+  def budget_category_label(category)
+    BudgetItem::CATEGORY_LABELS.fetch(category.to_s, category.presence || "未設定")
+  end
+
   def ui_icon(name, size: 20, label: nil, class_name: "ui-icon")
     paths = ICON_PATHS.fetch(name.to_sym, ICON_PATHS.fetch(:planning))
     attributes = {

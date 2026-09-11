@@ -40,6 +40,7 @@ Rails.application.routes.draw do
   resources :planning_options, only: %i[edit update destroy] do
     post :select, on: :member
     post :reject, on: :member
+    post :restore, on: :member
     resource :music_detail, only: %i[create update]
   end
   resources :planning_cost_links, only: %i[create destroy]

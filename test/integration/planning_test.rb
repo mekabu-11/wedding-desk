@@ -131,6 +131,19 @@ class PlanningTest < ActionDispatch::IntegrationTest
     assert_empty item.planning_cost_links
   end
 
+  test "rejected candidate can return to considering" do
+    item = @wedding.planning_items.create!(title: "架空候補復帰", category: "other")
+    option = item.planning_options.create!(wedding: @wedding, title: "架空見送り候補", status: "considering")
+
+    post reject_planning_option_path(option)
+    assert_equal "rejected", option.reload.status
+
+    post restore_planning_option_path(option)
+    assert_redirected_to planning_item_path(item)
+    assert_equal "considering", option.reload.status
+    assert ChangeEvent.for_target(option).where(action: "planning_option_restored").exists?
+  end
+
   test "candidate cost history is retained and only unpaid estimates are excluded" do
     item = @wedding.planning_items.create!(title: "架空費用履歴", category: "production")
     old_option = item.planning_options.create!(wedding: @wedding, title: "架空旧候補", reference_price_yen: 30_000)

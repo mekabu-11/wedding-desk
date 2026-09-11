@@ -60,6 +60,7 @@ class ChangeEvent < ApplicationRecord
     "planning_option_updated" => "候補を更新",
     "planning_option_deleted" => "候補を削除",
     "planning_option_selected" => "候補を採用",
+    "planning_option_restored" => "候補を検討中に戻す",
     "planning_option_cost_changed" => "候補に伴う費用を更新",
     "planning_option_cost_excluded" => "旧候補の概算費用を除外",
     "planning_option_rejected" => "候補を見送り",

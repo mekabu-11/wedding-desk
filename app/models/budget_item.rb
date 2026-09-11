@@ -8,6 +8,11 @@ class BudgetItem < ApplicationRecord
     "attending_children" => "出席子ども", "attending_households" => "出席世帯", "seating_tables" => "使用テーブル"
   }.freeze
   TAX_BASES = { "inclusive" => "税込", "exclusive" => "税抜", "unknown" => "不明" }.freeze
+  CATEGORY_LABELS = {
+    "venue" => "会場", "food" => "料理", "drink" => "飲み物", "gift" => "引き出物", "cash_gift" => "ご祝儀",
+    "travel" => "お車代", "production" => "演出", "music" => "音楽", "dress" => "衣装", "photo" => "写真",
+    "movie" => "映像", "invitation" => "招待状", "accommodation" => "宿泊", "other" => "その他"
+  }.freeze
   SOURCE_KINDS = { "manual" => "手動", "planning_option" => "検討候補", "cash_gift" => "ご祝儀", "travel_guest" => "個人のお車代", "travel_household" => "世帯のお車代", "gift_assignment" => "引き出物割当", "guest_gift_assignment" => "個人引き出物割当" }.freeze
   PAYMENT_STATUS_FILTERS = {
     "unsettled" => "未処理",
