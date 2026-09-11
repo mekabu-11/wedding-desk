@@ -71,4 +71,37 @@
       write(themeKey, dark ? "dark" : "light");
     });
   }
+
+  var filterDialog = document.querySelector("[data-filter-dialog]");
+  var filterOpenButton = document.querySelector("[data-filter-open]");
+  var filterCloseButton = document.querySelector("[data-filter-close]");
+
+  function closeFilterDialog() {
+    if (!filterDialog) return;
+    if (typeof filterDialog.close === "function") {
+      filterDialog.close();
+    } else {
+      filterDialog.removeAttribute("open");
+    }
+    if (filterOpenButton) filterOpenButton.setAttribute("aria-expanded", "false");
+  }
+
+  if (filterDialog && filterOpenButton) {
+    filterOpenButton.addEventListener("click", function () {
+      if (typeof filterDialog.showModal === "function") {
+        filterDialog.showModal();
+      } else {
+        filterDialog.setAttribute("open", "open");
+      }
+      filterOpenButton.setAttribute("aria-expanded", "true");
+      var firstField = filterDialog.querySelector("select, input");
+      if (firstField) firstField.focus();
+    });
+
+    if (filterCloseButton) filterCloseButton.addEventListener("click", closeFilterDialog);
+
+    filterDialog.addEventListener("click", function (event) {
+      if (event.target === filterDialog) closeFilterDialog();
+    });
+  }
 }());

@@ -98,7 +98,7 @@ class TaskPreparationTest < ActionDispatch::IntegrationTest
     refute_includes response.body, "本人B"
   end
 
-  test "task list keeps conditions above a dedicated scroll area" do
+  test "task list keeps conditions in a modal above a dedicated scroll area" do
     owner = create_owner
     wedding = create_wedding(owner)
     wedding.tasks.create!(origin: "manual", title: "架空スクロール確認")
@@ -108,6 +108,8 @@ class TaskPreparationTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select ".task-toolbar .task-filters"
+    assert_select "[data-filter-open][aria-haspopup='dialog']", count: 1
+    assert_select "dialog[data-filter-dialog]", count: 1
     assert_select ".task-toolbar .task-result-count"
     assert_select ".task-list-scroll .list-surface"
   end

@@ -1,9 +1,16 @@
 <header class="page-heading"><div><h1><span class="page-title"><%= ui_icon(:tasks, size: 25) %><span>やること</span></span></h1><p>準備を追加して、期限の近い順に進めましょう。</p></div><div class="task-actions"><%= link_to "Excelをまとめて移行", new_spreadsheet_import_path, class: "button secondary" %><%= link_to new_task_path, class: "button primary" do %><%= ui_icon(:plus, size: 17) %><span>タスクを追加</span><% end %></div></header>
 <div class="task-toolbar">
 <% filters_active = [@status, @assignee, @category, @period, @query].any?(&:present?) %>
-<details class="task-filters-disclosure"<%= " open" if filters_active %>>
-<summary><span>絞り込み</span><small><%= filters_active ? "条件を適用中" : "必要なときに開く" %></small></summary>
-<%= form_with url: tasks_path, method: :get, class: "task-filters surface" do |f| %>
+<div class="task-actions task-toolbar-actions">
+<%= link_to "一覧", tasks_path(request.query_parameters.except("view")), class: "button #{@view == 'list' ? 'primary' : 'secondary'}" %>
+<%= link_to "ガント", tasks_path(request.query_parameters.merge(view: "gantt")), class: "button #{@view == 'gantt' ? 'primary' : 'secondary'}" %>
+<button type="button" class="button secondary task-filter-trigger" data-filter-open aria-haspopup="dialog" aria-controls="task-filter-dialog" aria-expanded="false"><span>絞り込み</span><% if filters_active %><span class="badge green">適用中</span><% end %></button>
+<%= form_with url: bulk_preview_tasks_path, method: :post, class: "inline-form" do %><%= hidden_field_tag :selection, "filtered" %><%= hidden_field_tag :q, @query %><%= hidden_field_tag :status, @status %><%= hidden_field_tag :assignee, @assignee %><%= hidden_field_tag :category, @category %><%= hidden_field_tag :period, @period %><%= submit_tag "絞り込み結果を一括変更", class: "button secondary", disabled: @search_limit_exceeded %><% end %>
+</div>
+<dialog class="task-filter-dialog" id="task-filter-dialog" data-filter-dialog aria-labelledby="task-filter-title">
+<div class="task-filter-dialog-panel">
+<div class="task-filter-dialog-header"><h2 id="task-filter-title">絞り込み</h2><button type="button" class="task-filter-dialog-close" data-filter-close aria-label="絞り込みを閉じる">×</button></div>
+<%= form_with url: tasks_path, method: :get, class: "task-filters task-filter-dialog-form" do |f| %>
 <div class="field"><%= f.label :status, "状態" %><%= f.select :status, [['これから', '']] + Task::STATUSES.map { |k,v| [v,k] }, selected: @status %></div>
 <div class="field"><%= f.label :assignee, "担当" %><%= f.select :assignee, [['全員', '']] + @assignee_options, selected: @assignee %></div>
 <div class="field"><%= f.label :category, "カテゴリ" %><%= f.select :category, [['すべて', '']] + Task::CATEGORIES.map { |k,v| [v,k] }, selected: @category %></div>
@@ -11,8 +18,8 @@
 <div class="field"><%= f.label :q, "文字検索" %><%= f.search_field :q, value: @query, placeholder: "タイトル・詳細" %></div>
 <%= f.submit "絞り込む", class: "button secondary" %>
 <% end %>
-</details>
-<div class="task-actions task-toolbar-actions"><%= link_to "一覧", tasks_path(request.query_parameters.except("view")), class: "button #{@view == 'list' ? 'primary' : 'secondary'}" %><%= link_to "ガント", tasks_path(request.query_parameters.merge(view: "gantt")), class: "button #{@view == 'gantt' ? 'primary' : 'secondary'}" %><%= form_with url: bulk_preview_tasks_path, method: :post, class: "inline-form" do %><%= hidden_field_tag :selection, "filtered" %><%= hidden_field_tag :q, @query %><%= hidden_field_tag :status, @status %><%= hidden_field_tag :assignee, @assignee %><%= hidden_field_tag :category, @category %><%= hidden_field_tag :period, @period %><%= submit_tag "絞り込み結果を一括変更", class: "button secondary", disabled: @search_limit_exceeded %><% end %></div>
+</div>
+</dialog>
 <% if @search_limit_exceeded %><p class="flash flash-alert">文字検索の対象が2000件を超えています。安全に検索するため、状態・担当・カテゴリ・期間で対象を絞ってください。</p><% end %>
 <p class="muted task-result-count"><%= @total_count %>件<%= ' · 今週に期間が重なるタスク。開始日なしは今週期限のものを表示。' if @period == 'week' %></p>
 </div>

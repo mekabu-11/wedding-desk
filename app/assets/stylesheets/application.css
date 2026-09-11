@@ -318,6 +318,48 @@ html[data-theme="dark"] .gantt-header-label{background:var(--soft)}
   .activity-list .activity-detail{font-size:11px}
 }
 
+/* Keep the task list primary. Secondary conditions live in a focused dialog. */
+.task-toolbar>.task-toolbar-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.task-toolbar-actions .button{min-height:40px;padding:8px 14px}
+.task-toolbar-actions .inline-form{display:flex;flex:0 1 auto;margin:0}
+.task-toolbar-actions .inline-form .button{width:auto}
+.task-filter-trigger{gap:7px}
+.task-filter-dialog{width:min(620px,calc(100vw - 32px));max-width:none;margin:auto;padding:0;border:0;background:transparent;color:var(--ink)}
+.task-filter-dialog::backdrop{background:rgba(24,40,32,.4)}
+.task-filter-dialog-panel{background:var(--white);border:1px solid var(--line);border-radius:var(--radius);padding:21px;box-shadow:0 24px 80px rgba(31,52,42,.24)}
+.task-filter-dialog-header{display:flex;align-items:center;justify-content:space-between;gap:13px;margin-bottom:17px}
+.task-filter-dialog-header h2{font-size:20px}
+.task-filter-dialog-close{display:grid;place-items:center;width:36px;height:36px;padding:0;border:1px solid var(--line);border-radius:50%;background:var(--white);color:var(--muted);font-size:22px;line-height:1}
+.task-filter-dialog-close:hover{background:var(--soft);color:var(--green)}
+.task-toolbar .task-filter-dialog-form{grid-template-columns:repeat(2,minmax(0,1fr));gap:17px;margin:0;padding:0;border:0;background:transparent}
+.task-filter-dialog-form .field{margin:0}
+.task-filter-dialog-form .field:last-of-type,.task-filter-dialog-form>.button{grid-column:1/-1}
+.task-filter-dialog-form>.button{justify-self:end}
+.task-select-row{grid-template-columns:36px 1fr}
+.task-select-row .task-check{display:none}
+.task-select-row>input{margin:auto}
+.list-surface .task-row{padding:11px 15px;min-height:61px}
+.list-surface .row-content .micro{margin-top:3px}
+@media(min-width:761px){
+  .task-toolbar{padding-top:10px;padding-bottom:10px}
+}
+@media(max-width:760px){
+  .task-toolbar>.task-toolbar-actions{display:flex;gap:7px;align-items:center;margin-bottom:10px}
+  .task-toolbar-actions .button{flex:0 0 auto;min-height:40px;padding:8px 12px}
+  .task-toolbar-actions .inline-form{flex:1 1 100%;order:4}
+  .task-toolbar-actions .inline-form .button{width:100%}
+  .task-filter-dialog{width:calc(100vw - 24px);max-height:calc(100vh - 24px)}
+  .task-filter-dialog-panel{max-height:calc(100vh - 24px);overflow-y:auto;padding:17px}
+  .task-toolbar .task-filter-dialog-form{grid-template-columns:1fr;gap:15px}
+  .task-filter-dialog-form .field:last-of-type,.task-filter-dialog-form>.button{grid-column:auto}
+  .task-filter-dialog-form>.button{justify-self:stretch;width:100%}
+  .list-surface .task-row{padding:10px 11px;min-height:58px}
+  .list-surface .row-content h3{font-size:14px}
+  .list-surface .row-content .micro{font-size:11px;margin-top:2px}
+}
+html[data-theme="dark"] .task-filter-dialog-panel,html[data-theme="dark"] .task-filter-dialog-close{background:var(--white);border-color:var(--line);color:var(--ink)}
+html[data-theme="dark"] .task-filter-dialog-close:hover{background:#25332b}
+
 /* Keep the collapse control in the same row as the brand on narrow screens. */
 @media(max-width:760px){
   .sidebar-head{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:13px}
