@@ -21,6 +21,7 @@ class WeddingsController < ApplicationController
     @wedding = current_wedding
     return redirect_to new_wedding_path unless @wedding
     if @wedding.update(wedding_params)
+      purge_cover_photo_if_requested
       redirect_to root_path, notice: "設定を保存しました。"
     else
       render :edit, status: :unprocessable_entity
@@ -39,6 +40,12 @@ class WeddingsController < ApplicationController
   end
 
   def wedding_params
-    params.require(:wedding).permit(:name, :wedding_date, :venue_name, :self_name, :partner_name, :budget_yen)
+    params.require(:wedding).permit(:name, :wedding_date, :venue_name, :self_name, :partner_name, :budget_yen, :cover_photo)
+  end
+
+  def purge_cover_photo_if_requested
+    remove_requested = params.dig(:wedding, :remove_cover_photo).to_s == "1"
+    replacement_attached = params.dig(:wedding, :cover_photo).present?
+    @wedding.cover_photo.purge_later if remove_requested && !replacement_attached && @wedding.cover_photo.attached?
   end
 end

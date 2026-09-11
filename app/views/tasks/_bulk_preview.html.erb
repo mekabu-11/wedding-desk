@@ -1,5 +1,5 @@
 <%= link_to "← やること", tasks_path, class: "back-link" %>
-<header class="page-heading"><div><p class="eyebrow">BULK EDIT</p><h1>一括変更の確認</h1><p><%= @tasks.size %>件を確認してから、指定した項目だけを変更します。</p></div></header>
+<header class="page-heading"><div><p class="eyebrow">一括変更</p><h1>一括変更の確認</h1><p><%= @tasks.size %>件を確認してから、指定した項目だけを変更します。</p></div></header>
 <section class="surface narrow"><%= form_with url: bulk_update_tasks_path, method: :post, class: "form-stack" do %>
   <div class="form-grid"><div class="field"><%= label_tag :status, "状態（変更する時だけ選択）" %><%= select_tag :status, options_for_select([['変更しない','']] + Task::STATUSES.map { |k,v| [v,k] }) %></div><div class="field"><%= label_tag :assignee, "担当（変更する時だけ選択）" %><%= select_tag :assignee, options_for_select([['変更しない','']] + Task.assignee_options(@tasks.first.wedding)) %></div></div>
   <div class="field"><%= label_tag :category, "カテゴリ（変更する時だけ選択）" %><%= select_tag :category, options_for_select([['変更しない','']] + Task::CATEGORIES.map { |k,v| [v,k] }) %></div>

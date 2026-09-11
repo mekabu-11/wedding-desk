@@ -3,22 +3,26 @@
   <%= link_to "まとめて登録", new_document_path, class: "button primary dashboard-create" %>
 </header>
 
-<section class="overview-banner">
-  <div><p class="eyebrow">OUR WEDDING</p><h2><%= current_wedding.name %></h2><p><%= current_wedding.venue_name.presence || "会場はこれから" %><span class="separator">/</span><%= current_wedding.wedding_date&.strftime("%Y年%m月%d日") || "挙式日未設定" %></p></div>
+<section class="overview-banner <%= "has-cover-photo" if current_wedding.cover_photo.attached? %>">
+  <% if current_wedding.cover_photo.attached? %>
+    <div class="overview-photo" aria-hidden="true"><%= image_tag wedding_cover_photo_path, alt: "" %><span></span></div>
+  <% end %>
+  <div class="overview-copy"><p class="eyebrow">ふたりの結婚式</p><h2><%= current_wedding.name %></h2><p><%= current_wedding.venue_name.presence || "会場はこれから" %><span class="separator">/</span><%= current_wedding.wedding_date&.strftime("%Y年%m月%d日") || "挙式日未設定" %></p></div>
+  <div class="overview-emblem"><%= ui_icon(:rings, size: 46) %></div>
   <div class="countdown"><% if current_wedding.wedding_date %><% days = (current_wedding.wedding_date - Date.current).to_i %><span>挙式日まで</span><strong class="<%= 'countdown-text' if days <= 0 %>"><%= days.positive? ? days : (days.zero? ? "今日" : "記録") %><% if days.positive? %><small>日</small><% end %></strong><% else %><%= link_to "挙式日を設定", edit_wedding_path %><% end %></div>
 </section>
 
 <section class="summary-strip" aria-label="準備状況">
-  <%= link_to tasks_path(period: "week") do %><span>今週</span><strong><%= @week_count %><small>件</small></strong><% end %>
-  <%= link_to tasks_path(period: "overdue") do %><span>期限超過</span><strong class="<%= 'overdue' if @overdue_count.positive? %>"><%= @overdue_count %><small>件</small></strong><% end %>
-  <%= link_to guests_path do %><span>出席 / 未回答</span><strong><%= @attendance_counts["attending"].to_i %><small> / <%= @attendance_counts["unanswered"].to_i %>人</small></strong><% end %>
-  <%= link_to planning_items_path do %><span>検討中</span><strong><%= @considering_count %><small>件</small></strong><% end %>
+  <%= link_to tasks_path(period: "week") do %><span class="summary-label"><%= ui_icon(:tasks, size: 17) %>今週</span><strong><%= @week_count %><small>件</small></strong><% end %>
+  <%= link_to tasks_path(period: "overdue") do %><span class="summary-label"><%= ui_icon(:activity, size: 17) %>期限超過</span><strong class="<%= 'overdue' if @overdue_count.positive? %>"><%= @overdue_count %><small>件</small></strong><% end %>
+  <%= link_to guests_path do %><span class="summary-label"><%= ui_icon(:guests, size: 17) %>出席 / 未回答</span><strong><%= @attendance_counts["attending"].to_i %><small> / <%= @attendance_counts["unanswered"].to_i %>人</small></strong><% end %>
+  <%= link_to planning_items_path do %><span class="summary-label"><%= ui_icon(:planning, size: 17) %>検討中</span><strong><%= @considering_count %><small>件</small></strong><% end %>
 </section>
 
 <div class="dashboard-grid">
-  <section><div class="section-heading"><div><h2>今やること</h2><p class="muted">期限の近い順</p></div><%= link_to "すべて見る", tasks_path, class: "text-link" %></div><div class="surface list-surface"><% if @tasks.any? %><% @tasks.each do |task| %><%= render "tasks/row", task: task %><% end %><% else %><div class="empty-state compact"><h3>現在、未完了のタスクはありません</h3><%= link_to "タスクを追加", new_task_path, class: "button secondary" %></div><% end %></div></section>
+  <section><div class="section-heading"><div class="section-title"><%= ui_icon(:tasks, size: 20) %><div><h2>今やること</h2><p class="muted">期限の近い順</p></div></div><%= link_to "すべて見る", tasks_path, class: "text-link" %></div><div class="surface list-surface"><% if @tasks.any? %><% @tasks.each do |task| %><%= render "tasks/row", task: task %><% end %><% else %><div class="empty-state compact"><%= ui_icon(:tasks, size: 30) %><h3>現在、未完了のタスクはありません</h3><%= link_to "タスクを追加", new_task_path, class: "button secondary" %></div><% end %></div></section>
 
-  <section><div class="section-heading"><div><h2>お金の見通し</h2><p class="muted">集計対象の概算と確定額</p></div><%= link_to "収支を開く", budget_items_path, class: "text-link" %></div>
+  <section><div class="section-heading"><div class="section-title"><%= ui_icon(:money, size: 20) %><div><h2>お金の見通し</h2><p class="muted">集計対象の概算と確定額</p></div></div><%= link_to "収支を開く", budget_items_path, class: "text-link" %></div>
     <div class="surface finance-summary">
       <dl><div><dt>収入</dt><dd><%= number_to_currency(@income_total, unit: "¥", precision: 0) %></dd></div><div><dt>支出</dt><dd><%= number_to_currency(@expense_total, unit: "¥", precision: 0) %></dd></div><div class="finance-total"><dt>自己負担見込</dt><dd><%= number_to_currency(@estimated_burden, unit: "¥", precision: 0) %></dd></div></dl>
       <p><%= @outstanding_items.size %>件・残額 <strong><%= number_to_currency(@outstanding_amount, unit: "¥", precision: 0) %></strong></p>
@@ -28,6 +32,6 @@
 </div>
 
 <div class="dashboard-grid dashboard-secondary">
-  <section><div class="section-heading"><div><h2>最近の資料</h2></div><%= link_to "すべて見る", documents_path, class: "text-link" %></div><div class="surface list-surface"><% @documents.each do |doc| %><%= link_to doc, class: "document-row" do %><div class="row-content"><strong><%= doc.title %></strong><p><%= Document::SOURCES[doc.source_type] %> · <%= doc.created_at.strftime("%m/%d") %></p></div><% end %><% end %><% if @documents.empty? %><div class="empty-state compact"><p>資料はまだありません。</p></div><% end %></div></section>
-  <section><div class="section-heading"><div><h2>最近の変更</h2></div></div><div class="surface activity-list"><% @recent_changes.each do |event| %><div><strong><%= event.target_type %> #<%= event.target_id %></strong><span><%= event.action %> · <%= event.created_at.strftime("%m/%d %H:%M") %><%= " · #{event.actor.email}" if event.actor %></span></div><% end %><% if @recent_changes.empty? %><p class="muted">変更履歴はまだありません。</p><% end %></div></section>
+  <section><div class="section-heading"><div class="section-title"><%= ui_icon(:documents, size: 20) %><h2>最近の資料</h2></div><%= link_to "すべて見る", documents_path, class: "text-link" %></div><div class="surface list-surface"><% @documents.each do |doc| %><%= link_to doc, class: "document-row" do %><div class="row-content"><strong><%= doc.title %></strong><p><%= Document::SOURCES[doc.source_type] %> · <%= doc.created_at.strftime("%m/%d") %></p></div><% end %><% end %><% if @documents.empty? %><div class="empty-state compact"><%= ui_icon(:documents, size: 30) %><p>資料はまだありません。</p></div><% end %></div></section>
+  <section><div class="section-heading"><div class="section-title"><%= ui_icon(:activity, size: 20) %><h2>最近の変更</h2></div></div><div class="surface activity-list"><% @recent_changes.each do |event| %><div><strong><%= event.subject_label %></strong><span><%= event.action_label %> · <%= event.created_at.strftime("%m/%d %H:%M") %><%= " · #{event.actor == current_user ? "本人" : event.actor.email}" if event.actor %></span></div><% end %><% if @recent_changes.empty? %><p class="muted">変更履歴はまだありません。</p><% end %></div></section>
 </div>

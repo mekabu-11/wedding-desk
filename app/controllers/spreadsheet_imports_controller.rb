@@ -6,7 +6,7 @@ class SpreadsheetImportsController < ApplicationController
   end
 
   def create
-    files = params[:files].respond_to?(:to_ary) ? params[:files].to_ary : []
+    files = Array(params[:files]).compact_blank
     @batch = SpreadsheetImport.prepare(current_wedding, files)
     redirect_to spreadsheet_import_path(@batch), status: :see_other
   rescue SpreadsheetImport::Invalid => error

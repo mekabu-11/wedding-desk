@@ -1,7 +1,7 @@
-<header class="page-heading"><div><p class="eyebrow">SETTINGS</p><h1>結婚式の設定</h1><p>準備の基本情報をまとめておきましょう。</p></div></header><section class="surface narrow"><%= render "form" %></section>
+<header class="page-heading"><div><p class="eyebrow">基本情報</p><h1>結婚式の設定</h1><p>準備の基本情報をまとめておきましょう。</p></div></header><section class="surface narrow"><%= render "form" %></section>
 
 <section class="surface narrow" style="margin-top: 24px">
-  <div class="section-heading"><div><p class="eyebrow">SHARED ACCESS</p><h2>ふたりで共有</h2></div><span class="badge muted"><%= current_wedding.memberships.count %>/2人</span></div>
+  <div class="section-heading"><div><p class="eyebrow">共有設定</p><h2>ふたりで共有</h2></div><span class="badge muted"><%= current_wedding.memberships.count %>/2人</span></div>
   <% current_wedding.memberships.includes(:user).order(:id).each do |membership| %>
     <p><strong><%= membership.user.email %></strong> <span class="micro"><%= Membership::ROLES[membership.role] %></span></p>
   <% end %>

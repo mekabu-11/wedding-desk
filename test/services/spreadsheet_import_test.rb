@@ -33,11 +33,59 @@ class SpreadsheetImportTest < ActiveSupport::TestCase
       assert_equal 1, wedding.gift_assignments.count
       assert_equal 1000, wedding.gift_assignments.first.budget_item.amount_yen
       assert_equal 1, wedding.budget_items.where(source_kind: "manual").count
-      assert_equal 1, wedding.tasks.where(origin: "import").count
+      task = wedding.tasks.where(origin: "import").sole
+      assert_equal Date.new(2026, 9, 1), task.starts_on
+      assert_equal Date.new(2026, 9, 10), task.due_on
       assert_equal 1, wedding.planning_items.where(category: "music").count
       assert_equal "架空決定曲", wedding.planning_items.where(category: "music").first.planning_options.first.music_detail.selected_track
       assert_equal "selected", wedding.planning_items.where(category: "music").first.planning_options.first.status
     end
+  end
+
+  test "expands Excel ditto markers and groups repeated BGM scenes into candidates" do
+    wedding = create_wedding
+    sheets = {
+      "BGMリスト" => [
+        ["No", "シーン", "ジュン希望", "ナツ希望", "曲名/アーティスト", "何分何秒から流すか"],
+        ["1", "迎賓（2〜3曲）", "CLima", "朝の風景", nil, nil],
+        ["2", "〃", nil, nil, nil, nil],
+        ["3", "〃", "Welcome to the Black Parade", nil, nil, nil],
+        ["4", "送賓（2〜3曲）", nil, "Soar", nil, nil],
+        ["5", "〃", nil, "時は永遠に", nil, nil]
+      ]
+    }
+
+    with_uploads(xlsx_bytes(sheets)) do |uploads|
+      batch = SpreadsheetImport.prepare(wedding, uploads)
+      bgm_rows = batch.rows.where(row_kind: "bgm").order(:row_number)
+      assert_equal 4, bgm_rows.count
+      assert_equal ["迎賓（2〜3曲）", "迎賓（2〜3曲）", "送賓（2〜3曲）", "送賓（2〜3曲）"],
+        bgm_rows.map { |row| row.original_data["title"] }
+
+      SpreadsheetImport.commit(batch, {})
+      assert_equal ["迎賓（2〜3曲）", "送賓（2〜3曲）"], wedding.planning_items.where(category: "music").order(:id).map(&:title)
+      welcome, sendoff = wedding.planning_items.where(category: "music").order(:id).to_a
+      assert_equal 2, welcome.planning_options.count
+      assert_equal 2, sendoff.planning_options.count
+      assert_equal ["CLima", "Welcome to the Black Parade"], welcome.planning_options.order(:id).map(&:title)
+      assert_equal ["迎賓（2〜3曲）", "迎賓（2〜3曲）"], welcome.planning_options.order(:id).map { |option| option.music_detail.scene }
+    end
+  end
+
+  test "repairs previously imported ditto BGM items without changing other scenes" do
+    wedding = create_wedding
+    scene = wedding.planning_items.create!(title: "迎賓（2〜3曲）", category: "music")
+    first = scene.planning_options.create!(wedding: wedding, title: "迎賓（2〜3曲）")
+    first.create_music_detail!(wedding: wedding, planning_option: first, wish_track_a: "CLima", scene: scene.title)
+    marker = wedding.planning_items.create!(title: "〃", category: "music")
+    second = marker.planning_options.create!(wedding: wedding, title: "〃")
+    second.create_music_detail!(wedding: wedding, planning_option: second, wish_track_a: "Welcome", scene: "〃")
+
+    assert_equal 1, SpreadsheetImport.repair_bgm_ditto_items!(wedding)
+    assert_raises(ActiveRecord::RecordNotFound) { marker.reload }
+    assert_equal ["迎賓（2〜3曲）", "Welcome"], scene.reload.planning_options.order(:id).map(&:title)
+    assert_equal ["迎賓（2〜3曲）", "迎賓（2〜3曲）"], scene.planning_options.order(:id).map { |option| option.music_detail.scene }
+    assert_equal 0, SpreadsheetImport.repair_bgm_ditto_items!(wedding)
   end
 
   test "does not execute formulas and never creates MoneyMovement from actual amounts" do
@@ -80,6 +128,19 @@ class SpreadsheetImportTest < ActiveSupport::TestCase
       error = assert_raises(SpreadsheetImport::Invalid) { SpreadsheetImport.prepare(wedding, uploads) }
       assert_includes error.message, "パス"
     end
+  end
+
+  test "ignores blank upload slots and reports missing file paths as import errors" do
+    wedding = create_wedding
+    with_uploads(sample_workbook) do |uploads|
+      batch = SpreadsheetImport.prepare(wedding, [uploads.first, ""])
+      assert_equal 1, batch.rows.where(row_kind: "task").count
+    end
+
+    error = assert_raises(SpreadsheetImport::Invalid) do
+      SpreadsheetImport.prepare(wedding, ["/tmp/wedding-desk-file-does-not-exist.xlsx"])
+    end
+    assert_includes error.message, "xlsx"
   end
 
   test "commit rollback leaves all business records untouched when a reference is unresolved" do
@@ -135,7 +196,8 @@ class SpreadsheetImportTest < ActiveSupport::TestCase
         [gift_definition_group, "架空品", [:formula, "SUM(C2)", "1000"]]],
       "収支明細" => [["区分", "カテゴリ", "項目", "数量区分", "単価（円）", "数量", "見込額（円）", "実績額（円）"],
         ["支出", "架空", "架空費用", "手動", "1000", "1", [:formula, "SUM(E2:F2)", "1000"], "900"]],
-      "タスク一覧" => [["title", "notes", "category", "assignee", "status"], [task_title, "架空メモ", "other", "旧担当", "todo"], ["区切り見出し", "", "", "", ""]],
+      "タスク一覧" => [["title", "notes", "category", "starts_on", "due_on", "assignee", "status"],
+        [task_title, "架空メモ", "other", "2026-09-01", "2026-09-10", "旧担当", "todo"], ["区切り見出し", "", "", "", "", "", ""]],
       "BGMリスト" => [["No", "シーン", "二人希望", "架空決定曲", "何分何秒から流すか"], ["1", "入場", "架空希望", "架空決定曲", "1分30秒"]]
     }
     xlsx_bytes(sheets)

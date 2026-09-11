@@ -6,26 +6,33 @@
   <meta name="robots" content="noindex,nofollow">
   <%= csrf_meta_tags %><%= csp_meta_tag %>
   <%= stylesheet_link_tag "application" %>
+  <%= javascript_include_tag "application", defer: true %>
   <%= yield :head %>
 </head>
 <body>
 <% if current_user && current_wedding %>
   <aside class="sidebar">
-    <%= link_to root_path, class: "brand" do %><span class="brand-mark">w.</span><span>Wedding Desk<small>ふたりの準備を、ひとつに。</small></span><% end %>
-    <div class="sidebar-label">WORKSPACE</div>
+    <div class="sidebar-head">
+      <%= link_to root_path, class: "brand" do %><span class="brand-mark">w.</span><span class="brand-copy">Wedding Desk<small>ふたりの準備を、ひとつに。</small></span><% end %>
+      <div class="sidebar-head-tools">
+        <button type="button" class="sidebar-toggle" data-sidebar-toggle aria-expanded="true" aria-label="サイドバーを折りたたむ"><span aria-hidden="true">‹</span></button>
+        <button type="button" class="theme-toggle" data-theme-toggle aria-pressed="false" aria-label="ブラックテーマに切り替え"><span class="theme-toggle-icon" aria-hidden="true">◐</span><span class="theme-toggle-label">ブラックテーマ</span></button>
+      </div>
+    </div>
+    <div class="sidebar-label">ふたりの準備</div>
     <nav aria-label="メインナビゲーション">
-      <%= nav_link("概要", root_path, controller_name == "dashboard") %>
-      <%= nav_link("資料と連絡", documents_path, controller_name.in?(%w[documents candidates])) %>
-      <%= nav_link("やること", tasks_path, controller_name == "tasks") %>
-      <%= nav_link("ゲスト", guests_path, controller_name.in?(%w[guests households seating_tables cash_gift_rules gift_sets gift_assignments])) %>
-      <%= nav_link("お金", budget_items_path, controller_name.in?(%w[budget_items money_movements])) %>
-      <%= nav_link("検討・決定", planning_items_path, controller_name.in?(%w[planning_items planning_options music_details planning_cost_links task_planning_links])) %>
+      <%= nav_link("概要", root_path, controller_name == "dashboard", icon: :overview) %>
+      <%= nav_link("資料と連絡", documents_path, controller_name.in?(%w[documents candidates]), icon: :documents) %>
+      <%= nav_link("やること", tasks_path, controller_name == "tasks", icon: :tasks) %>
+      <%= nav_link("ゲスト", guests_path, controller_name.in?(%w[guests households seating_tables cash_gift_rules gift_sets gift_assignments]), icon: :guests) %>
+      <%= nav_link("お金", budget_items_path, controller_name.in?(%w[budget_items money_movements]), icon: :money) %>
+      <%= nav_link("検討・決定", planning_items_path, controller_name.in?(%w[planning_items planning_options music_details planning_cost_links task_planning_links]), icon: :planning) %>
     </nav>
     <%= link_to "＋ まとめて登録", new_document_path, class: "button primary sidebar-create" %>
     <div class="sidebar-bottom">
-      <div class="wedding-mini"><span class="eyebrow">OUR WEDDING</span><strong><%= current_wedding.name %></strong><span><%= current_wedding.wedding_date&.strftime("%Y . %m . %d") || "挙式日未設定" %></span></div>
-      <%= nav_link("ヘルプ", help_path, controller_name == "help") %>
-      <%= nav_link("結婚式の設定", edit_wedding_path, controller_name == "weddings") %>
+      <div class="wedding-mini"><span class="eyebrow">ふたりの結婚式</span><strong><%= current_wedding.name %></strong><span><%= current_wedding.wedding_date&.strftime("%Y . %m . %d") || "挙式日未設定" %></span></div>
+      <%= nav_link("ヘルプ", help_path, controller_name == "help", icon: :help) %>
+      <%= nav_link("結婚式の設定", edit_wedding_path, controller_name == "weddings", icon: :settings) %>
       <%= button_to "ログアウト", session_path, method: :delete, class: "logout" %>
     </div>
   </aside>

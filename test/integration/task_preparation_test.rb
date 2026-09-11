@@ -37,7 +37,7 @@ class TaskPreparationTest < ActionDispatch::IntegrationTest
       assert_redirected_to task_import_path(batch)
       get task_import_path(batch)
       assert_response :success
-      assert_select 'script', count: 0
+      assert_select 'script:not([src])', count: 0
       assert_equal 0, wedding.tasks.count
       patch task_import_path(batch), params: {mapping: {'0' => 'both'}}
       assert_equal 0, wedding.tasks.count
@@ -96,5 +96,19 @@ class TaskPreparationTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "架空太郎"
     refute_includes response.body, "本人A"
     refute_includes response.body, "本人B"
+  end
+
+  test "task list keeps conditions above a dedicated scroll area" do
+    owner = create_owner
+    wedding = create_wedding(owner)
+    wedding.tasks.create!(origin: "manual", title: "架空スクロール確認")
+    sign_in(owner)
+
+    get tasks_path
+
+    assert_response :success
+    assert_select ".task-toolbar .task-filters"
+    assert_select ".task-toolbar .task-result-count"
+    assert_select ".task-list-scroll .list-surface"
   end
 end

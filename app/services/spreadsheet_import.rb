@@ -13,6 +13,7 @@ class SpreadsheetImport
   MAX_FILES = 2
   MAPPING_VERSION = "xlsx-v1".freeze
   IGNORED_SHEETS = /\A(?:今週|ダッシュボード|使い方|サンプル)/.freeze
+  BGM_DITTO_MARKERS = %w[〃 々 同上 " “ ”].freeze
   ROW_ORDER = %w[master cash_gift_rule household guest gift_set gift_assignment budget_item task bgm].freeze
 
   def self.prepare(wedding, files)
@@ -23,9 +24,56 @@ class SpreadsheetImport
     new(batch.wedding, []).commit(batch, mapping, confirmed: confirmed)
   end
 
+  # Repairs BGM rows imported before ditto markers were expanded. This is safe to
+  # run more than once: after the marker items are merged, it has nothing left to do.
+  def self.repair_bgm_ditto_items!(wedding)
+    new(wedding, []).repair_bgm_ditto_items!
+  end
+
   def initialize(wedding, files)
     @wedding = wedding
-    @files = Array(files).compact
+    @files = Array(files).compact_blank
+  end
+
+  def repair_bgm_ditto_items!
+    ActiveRecord::Base.transaction do
+      previous_item = nil
+      repaired = 0
+      @wedding.planning_items.where(category: "music").order(:id).to_a.each do |item|
+        item.planning_options.to_a.each do |option|
+          detail = option.music_detail
+          next unless detail && detail.original_text.to_s.include?("シーン:〃") && !bgm_candidate_present?(detail)
+          option.destroy!
+          repaired += 1
+        end
+        item.association(:planning_options).reset
+        marker_item = bgm_ditto_marker?(item.title)
+        if marker_item && previous_item
+          item.planning_options.to_a.each do |option|
+            detail = option.music_detail
+            if detail && !bgm_candidate_present?(detail)
+              option.destroy!
+              next
+            end
+            if option.selected? && previous_item.planning_options.where(status: "selected").exists?
+              option.update!(status: "draft")
+            end
+            option.update!(planning_item: previous_item)
+            if detail
+              detail.update!(scene: previous_item.title)
+              candidate_title = detail.selected_track.presence || detail.wish_track_a.presence || detail.wish_track_b.presence
+              option.update!(title: bgm_option_title(candidate_title)) if option.title.to_s == item.title.to_s
+            end
+          end
+          item.association(:planning_options).reset
+          item.destroy!
+          repaired += 1
+        else
+          previous_item = item unless marker_item
+        end
+      end
+      repaired
+    end
   end
 
   def prepare
@@ -85,12 +133,13 @@ class SpreadsheetImport
       end
       batch
     end
-  rescue Zip::Error, Nokogiri::XML::SyntaxError, IOError, ArgumentError => error
+  rescue Zip::Error, Nokogiri::XML::SyntaxError, IOError, SystemCallError, ArgumentError => error
     raise Invalid, "xlsxを読み込めません。壊れていないExcelファイルを選んでください。（#{error.message.truncate(120)}）"
   end
 
   def commit(batch, mapping, confirmed: false)
     @allow_cached_candidates = confirmed
+    @planning_items_by_title = nil
     raise Invalid, "この取り込みは既に反映済みです。" if batch.state == "committed"
     rows = batch.rows.order(:id).to_a
     labels = rows.filter_map(&:mapping_label).uniq
@@ -137,7 +186,9 @@ class SpreadsheetImport
       file.rewind if file.respond_to?(:rewind)
       file.read(MAX_FILE_BYTES + 1).to_s
     else
-      File.binread(file.to_s, MAX_FILE_BYTES + 1)
+      path = file.to_s
+      raise Invalid, "xlsxファイルを選択してください。" if path.blank? || !File.file?(path)
+      File.binread(path, MAX_FILE_BYTES + 1)
     end
     raise Invalid, "1ファイル#{MAX_FILE_BYTES / 1.megabyte}MB以下にしてください。" if bytes.bytesize > MAX_FILE_BYTES
     raise Invalid, "xlsx（Excel）ファイルを選んでください。" unless bytes.start_with?("PK\x03\x04")
@@ -353,18 +404,26 @@ class SpreadsheetImport
   end
 
   def parse_bgm(sheet, header_row, headers, file_digest)
+    previous_scene = nil
     each_data_row(sheet, header_row).filter_map do |item|
-      scene = row_value(item, headers, "シーン")
+      raw_scene = row_value(item, headers, "シーン")
+      scene = bgm_scene(raw_scene, previous_scene)
+      previous_scene = scene if scene.present?
       values = headers.filter_map { |column, header| [header, row_value(item, headers, header)] if row_value(item, headers, header).present? }
-      next if scene.blank? && values.empty?
       wishes = headers.select { |_column, header| header.include?("希望") }.map { |column, _| value(item, column) }.compact
       selected = headers.filter_map { |column, header| value(item, column) if header.include?("決定") || header.include?("曲名") }.compact.first
       artist = nil
       if selected.to_s.include?("/")
         selected, artist = selected.split("/", 2).map(&:strip)
       end
+      offset = parse_offset(values.map(&:last).join(" "))
+      candidate_values = [selected, artist, *wishes, offset].compact_blank
+      next if raw_scene.blank? && candidate_values.empty?
+      next if bgm_ditto_marker?(raw_scene) && candidate_values.empty?
+      option_title = bgm_option_title(selected.presence || wishes.compact_blank.first)
       data = { title: scene.presence || selected.presence || "BGM", scene: scene, wish_track_a: wishes[0], wish_track_b: wishes[1],
-        selected_track: selected, artist: artist, start_offset_seconds: parse_offset(values.map(&:last).join(" ")), original_text: values.map { |pair| pair.join(":") }.join(" / ") }
+        selected_track: selected, artist: artist, option_title: option_title, start_offset_seconds: offset,
+        original_text: values.map { |pair| pair.join(":") }.join(" / ") }
       build_row("bgm", sheet, item, file_digest, data, [])
     end
   end
@@ -467,8 +526,28 @@ class SpreadsheetImport
   end
 
   def parse_offset(text)
-    match = text.to_s.match(/(\d{1,2})\s*分\s*(\d{1,2})\s*秒/)
-    match ? match[1].to_i * 60 + match[2].to_i : nil
+    japanese = text.to_s.match(/(\d{1,2})\s*分\s*(\d{1,2})\s*秒/)
+    return japanese[1].to_i * 60 + japanese[2].to_i if japanese
+
+    colon = text.to_s.match(/(?:^|[^\d])(\d{1,2}):(\d{2})(?:[^\d]|$)/)
+    colon ? colon[1].to_i * 60 + colon[2].to_i : nil
+  end
+
+  def bgm_ditto_marker?(scene)
+    BGM_DITTO_MARKERS.include?(scene.to_s.strip)
+  end
+
+  def bgm_scene(raw_scene, previous_scene)
+    return previous_scene if bgm_ditto_marker?(raw_scene) && previous_scene.present?
+    raw_scene.presence
+  end
+
+  def bgm_option_title(value)
+    value.to_s.gsub(/\s+/, " ").strip.presence || "未定"
+  end
+
+  def bgm_candidate_present?(detail)
+    [detail.wish_track_a, detail.wish_track_b, detail.selected_track, detail.artist, detail.start_offset_seconds].compact_blank.any?
   end
 
   def build_row(kind, sheet, row, file_digest, data, warnings)
@@ -568,13 +647,14 @@ class SpreadsheetImport
       else
         task = @wedding.tasks.create!(title: data["title"], description: data["notes"], category: task_category_key(data["category_raw"]) || "other",
           assignee: mapping[data["assignee_raw"].to_s] || Task.normalize_assignee(data["assignee_raw"]).presence || "unknown",
-          status: enum_key(Task::STATUSES, data["status_raw"], "todo"), origin: "import", source_key: row.source_key,
+          starts_on: data["starts_on"], due_on: data["due_on"], status: enum_key(Task::STATUSES, data["status_raw"], "todo"),
+          origin: "import", source_key: row.source_key,
           source_details: data.slice("source_file", "source_sheet", "source_row", "source_sha256", "sheet_name", "row_number", "assignee_raw", "category_raw"))
         row.target_type, row.target_id = "Task", task.id
       end
     when "bgm"
-      item = @wedding.planning_items.create!(title: data["title"], category: "music")
-      option = item.planning_options.create!(wedding: @wedding, title: data["selected_track"].presence || data["title"],
+      item = planning_item_for_bgm(data["title"])
+      option = item.planning_options.create!(wedding: @wedding, title: data["option_title"].presence || data["selected_track"].presence || "未定",
         status: data["selected_track"].present? ? "selected" : "draft")
       option.create_music_detail!(wedding: @wedding, planning_option: option, wish_track_a: data["wish_track_a"],
         wish_track_b: data["wish_track_b"], selected_track: data["selected_track"], artist: data["artist"],
@@ -583,6 +663,11 @@ class SpreadsheetImport
     else
       raise Invalid, "未対応の行種別です。"
     end
+  end
+
+  def planning_item_for_bgm(title)
+    @planning_items_by_title ||= @wedding.planning_items.where(category: "music").to_a.index_by(&:title)
+    @planning_items_by_title[title] ||= @wedding.planning_items.create!(title: title, category: "music")
   end
 
   def enum_key(mapping, raw, fallback)

@@ -1,8 +1,17 @@
 <%= render "shared/errors", record: @wedding %>
-<%= form_with model: @wedding, url: wedding_path, class: "form-stack" do |f| %>
+<%= form_with model: @wedding, url: wedding_path, class: "form-stack", html: { multipart: true } do |f| %>
   <div class="field"><%= f.label :name, "結婚式名" %><%= f.text_field :name, required: true, maxlength: 100, placeholder: "私たちの結婚式" %></div>
   <div class="form-grid"><div class="field"><%= f.label :wedding_date, "挙式日" %><%= f.date_field :wedding_date %></div><div class="field"><%= f.label :venue_name, "会場名" %><%= f.text_field :venue_name, placeholder: "未定の場合は空欄で大丈夫です" %></div></div>
   <div class="form-grid"><div class="field"><%= f.label :self_name, "自分の表示名" %><%= f.text_field :self_name, placeholder: "担当の読み取りに使います" %></div><div class="field"><%= f.label :partner_name, "パートナーの表示名" %><%= f.text_field :partner_name %></div></div>
   <div class="field"><%= f.label :budget_yen, "当初予算（円）" %><%= f.number_field :budget_yen, min: 0, max: 999999999999, step: 1, placeholder: "例：4500000" %><small>予算の記録のみ。見積の集計は次の開発段階で追加します。</small></div>
+  <div class="field cover-photo-field">
+    <%= f.label :cover_photo, "トップに表示する写真（任意）" %>
+    <% if @wedding.cover_photo.attached? %>
+      <div class="cover-photo-preview"><%= image_tag wedding_cover_photo_path, alt: "現在のトップ写真" %><div><strong>現在の写真</strong><small>トップ画面の上部に表示されます。</small></div></div>
+      <label class="check-label"><%= check_box_tag "wedding[remove_cover_photo]", "1", false %>現在の写真を削除する</label>
+    <% end %>
+    <%= f.file_field :cover_photo, accept: "image/jpeg,image/png,image/webp,image/heic,image/heif", capture: "environment" %>
+    <small>JPG・PNG・WebP・HEIC、10MBまで。ふたりの思い出の写真がおすすめです。</small>
+  </div>
   <%= f.submit "保存して準備を進める", class: "button primary" %>
 <% end %>

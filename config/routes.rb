@@ -5,6 +5,7 @@ Rails.application.routes.draw do
   get "help/usage.css", to: "help#stylesheet", as: :help_stylesheet
   get "help/screenshots/:name", to: "help#screenshot", as: :help_screenshot
   resource :wedding, only: %i[new create edit update]
+  get "wedding/cover-photo", to: "wedding_cover_photos#show", as: :wedding_cover_photo
   resource :membership, only: :create
   resources :documents, only: %i[index new create show destroy] do
     post :retry_analysis, on: :member

@@ -1,5 +1,5 @@
 <%= link_to "← やること", tasks_path, class: "back-link" %>
-<header class="page-heading"><div><p class="eyebrow">FIRST EXCEL MIGRATION</p><h1>Excelをまとめて移行</h1><p>2つの管理表を同時に選び、統合プレビューを確認してから登録します。</p></div></header>
+<header class="page-heading"><div><p class="eyebrow">データ移行</p><h1>Excelをまとめて移行</h1><p>2つの管理表を同時に選び、統合プレビューを確認してから登録します。</p></div></header>
 <section class="surface narrow">
   <div class="callout"><strong>外部送信なし・数式は実行しません</strong><p>Excelはサーバー内でXMLとして読み取ります。数式のキャッシュ値、実績額、日付不明の入出金は確定扱いにしません。元ファイルの内容は確認後も手元に保管してください。</p></div>
   <%= form_with url: spreadsheet_imports_path, multipart: true, class: "form-stack" do |f| %>

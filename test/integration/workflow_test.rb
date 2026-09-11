@@ -59,6 +59,58 @@ class WorkflowTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "共有されるタスク"
   end
 
+  test "owner can set a private cover photo that appears on the dashboard" do
+    owner = create_owner
+    wedding = create_wedding(owner)
+    sign_in(owner)
+
+    photo = Base64.decode64("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=")
+    Tempfile.create(["トップ写真", ".png"]) do |file|
+      file.binmode
+      file.write(photo)
+      file.rewind
+      patch wedding_path, params: { wedding: { name: wedding.name, cover_photo: Rack::Test::UploadedFile.new(file.path, "image/png") } }
+    end
+
+    assert_redirected_to root_path
+    assert wedding.reload.cover_photo.attached?
+    get root_path
+    assert_response :success
+    assert_includes response.body, wedding_cover_photo_path
+
+    get wedding_cover_photo_path
+    assert_response :success
+    assert_equal "private, no-store", response.headers["Cache-Control"]
+    assert_equal photo, response.body
+
+    perform_enqueued_jobs do
+      patch wedding_path, params: { wedding: { name: wedding.name, remove_cover_photo: "1" } }
+    end
+    assert_redirected_to root_path
+    refute wedding.reload.cover_photo.attached?
+
+    other = create_wedding
+    sign_in(other.users.first)
+    get wedding_cover_photo_path
+    assert_response :not_found
+  end
+
+  test "dashboard recent changes explain the record and action in Japanese" do
+    owner = create_owner
+    wedding = create_wedding(owner)
+    guest = wedding.guests.create!(name: "佐藤 花子", side: "unknown", age_group: "adult", attendance: "unanswered")
+    ChangeEvent.create!(wedding: wedding, actor: owner, target: guest, action: "guest_attendance_changed",
+      before: { attendance: "unanswered" }.to_json, after: { attendance: "attending" }.to_json, source: "guest")
+    sign_in(owner)
+
+    get root_path
+    assert_response :success
+    assert_includes response.body, "佐藤 花子"
+    assert_includes response.body, "出欠を出席に変更"
+    refute_includes response.body, "Guest #"
+    refute_includes response.body, "guest_attendance_changed"
+  end
+
   test "only the owner can add a member and a wedding is limited to two users" do
     owner = create_owner
     wedding = create_wedding(owner)
@@ -139,7 +191,7 @@ class WorkflowTest < ActionDispatch::IntegrationTest
     sign_in(owner)
     get document_path(doc)
     assert_response :success
-    assert_select "script", count: 0
+    assert_select "script:not([src])", count: 0
     assert_select "img[onerror]", count: 0
     assert_includes response.body, "&lt;img"
     assert_equal "no-store", response.headers["Cache-Control"]
