@@ -1,5 +1,7 @@
 # Render + Supabase への公開
 
+実際の操作を上から順に進めるチェックリストは [remote-deployment-runbook.md](remote-deployment-runbook.md) を参照する。このページは構成の判断と制約を説明する。
+
 このアプリは、Render の Web Service と Supabase PostgreSQL を使い、スマホ・PCのブラウザから同じURLで利用できる。`render.yaml` を用意してあるため、Render では GitHub リポジトリを指定して Blueprint として作成する。
 
 個人利用から無料提供へ移る段階別の判断は [docs/deployment-roadmap.md](deployment-roadmap.md) にまとめている。無料枠は個人試験用とし、一般公開ではバックアップと常時稼働を確保できる構成へ移行する。

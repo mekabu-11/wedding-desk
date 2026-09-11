@@ -123,6 +123,7 @@ Ruby 3.4 / Rails 8.1.3.1 / PostgreSQL 17 / Solid Queue。Gemの解決結果は `
 - `docs/wedding-desk-design-v1.md`：段階1以降を含む承認済み設計
 - `docs/ai-analysis.md`：AI処理とエラー時の挙動
 - `docs/deployment.md`：Dockerによる配置・運用手順
+- `docs/remote-deployment-runbook.md`：GitHubへpushしてRender＋Supabaseへ初回公開・更新・復旧する手順
 - `docs/deployment-roadmap.md`：個人利用から招待制ベータ、無料提供へ移る段階別デプロイ計画
 - `docs/verification.md`：検証結果
 - `wedding_secretary_mvp_spec_v0.2.md`：MVP全体の仕様
