@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <title><%= content_for(:title) || "Wedding Desk — ふたりの準備を、ひとつに。" %></title>
+  <title><%= content_for(:title) || "Wedding Desk" %></title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="robots" content="noindex,nofollow">
   <%= csrf_meta_tags %><%= csp_meta_tag %>
@@ -13,7 +13,7 @@
 <% if current_user && current_wedding %>
   <aside class="sidebar">
     <div class="sidebar-head">
-      <%= link_to root_path, class: "brand" do %><span class="brand-mark">w.</span><span class="brand-copy">Wedding Desk<small>ふたりの準備を、ひとつに。</small></span><% end %>
+      <%= link_to root_path, class: "brand" do %><span class="brand-mark">w.</span><span class="brand-copy">Wedding Desk</span><% end %>
       <div class="sidebar-head-tools">
         <button type="button" class="sidebar-toggle" data-sidebar-toggle aria-expanded="true" aria-label="サイドバーを折りたたむ"><span aria-hidden="true">‹</span></button>
       </div>

@@ -3,7 +3,7 @@
   <rect width="1440" height="900" fill="#fafbf9"/>
   <rect width="245" height="900" fill="#fff" stroke="#e2e8e2"/>
   <rect x="35" y="40" width="40" height="40" rx="10" fill="#315e50"/><text x="55" y="70" fill="#fff" text-anchor="middle" font-size="26">w.</text>
-  <text x="90" y="58" fill="#263d37" font-family="Georgia, serif" font-size="21" font-weight="600">Wedding Desk</text><text x="90" y="77" fill="#596a61" font-family="Arial" font-size="9">ふたりの準備を、ひとつに。</text>
+  <text x="90" y="58" fill="#263d37" font-family="Georgia, serif" font-size="21" font-weight="600">Wedding Desk</text><text x="90" y="77" fill="#596a61" font-family="Arial" font-size="9"></text>
   <text x="35" y="150" fill="#596a61" font-family="Arial" font-size="10" letter-spacing="2">WORKSPACE</text>
   <rect x="24" y="175" width="195" height="47" rx="7" fill="#f0f4ed"/><rect x="24" y="192" width="3" height="14" rx="2" fill="#315e50"/>
   <text x="48" y="204" fill="#315e50" font-family="Arial" font-size="14" font-weight="600">概要</text><text x="48" y="264" fill="#596a61" font-family="Arial" font-size="14">資料と連絡</text><text x="48" y="319" fill="#596a61" font-family="Arial" font-size="14">やること</text>
