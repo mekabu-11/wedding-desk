@@ -29,7 +29,7 @@
     </nav>
     <%= link_to "＋ まとめて登録", new_document_path, class: "button primary sidebar-create" %>
     <div class="sidebar-bottom">
-      <div class="wedding-mini"><span class="eyebrow">ふたりの結婚式</span><strong><%= current_wedding.name %></strong><span><%= current_wedding.wedding_date&.strftime("%Y . %m . %d") || "挙式日未設定" %></span></div>
+      <div class="wedding-mini"><span class="wedding-mini-label">結婚式</span><strong><%= current_wedding.name %></strong><span class="wedding-mini-date"><span>挙式日</span><% if current_wedding.wedding_date %><time datetime="<%= current_wedding.wedding_date.iso8601 %>"><%= current_wedding.wedding_date.strftime("%Y年%-m月%-d日") %></time><% else %><span>未設定</span><% end %></span></div>
       <%= nav_link("ヘルプ", help_path, controller_name == "help", icon: :help) %>
       <%= nav_link("結婚式の設定", edit_wedding_path, controller_name == "weddings", icon: :settings) %>
       <%= button_to "ログアウト", session_path, method: :delete, class: "logout" %>

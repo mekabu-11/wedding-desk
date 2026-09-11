@@ -367,3 +367,11 @@ html[data-theme="dark"] .task-filter-dialog-close:hover{background:#25332b}
   .sidebar-head-tools{min-width:38px;justify-content:flex-end}
   .sidebar-toggle{flex:0 0 38px}
 }
+
+/* Wedding identity in the sidebar: a compact hierarchy instead of a spaced date string. */
+.wedding-mini{padding:17px 13px 12px}
+.wedding-mini .wedding-mini-label{font-size:10px;line-height:1.4;letter-spacing:.1em;color:var(--muted);font-weight:650}
+.wedding-mini strong{display:block;margin-top:7px;font-size:14px;line-height:1.55;font-weight:650;overflow-wrap:anywhere}
+.wedding-mini .wedding-mini-date{display:flex;align-items:baseline;gap:7px;margin-top:6px;font-family:inherit;font-size:11px;line-height:1.5;letter-spacing:0;color:var(--muted)}
+.wedding-mini-date>span{font-size:10px;color:var(--muted)}
+.wedding-mini-date time{font-variant-numeric:tabular-nums;white-space:nowrap}
