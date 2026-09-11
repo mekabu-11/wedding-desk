@@ -107,6 +107,7 @@ class WorkflowTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_includes response.body, "佐藤 花子"
     assert_includes response.body, "出欠を出席に変更"
+    assert_includes response.body, "出欠：未回答 → 出席"
     refute_includes response.body, "Guest #"
     refute_includes response.body, "guest_attendance_changed"
   end
