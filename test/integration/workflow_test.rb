@@ -112,6 +112,20 @@ class WorkflowTest < ActionDispatch::IntegrationTest
     refute_includes response.body, "guest_attendance_changed"
   end
 
+  test "theme control lives in wedding settings" do
+    owner = create_owner
+    create_wedding(owner)
+    sign_in(owner)
+
+    get root_path
+    assert_response :success
+    assert_select "[data-theme-toggle]", count: 0
+
+    get edit_wedding_path
+    assert_response :success
+    assert_select "[data-theme-toggle]", count: 1
+  end
+
   test "only the owner can add a member and a wedding is limited to two users" do
     owner = create_owner
     wedding = create_wedding(owner)

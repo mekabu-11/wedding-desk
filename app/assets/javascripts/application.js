@@ -45,7 +45,13 @@
     if (icon) icon.textContent = dark ? "☼" : "◐";
   }
 
-  setSidebarCollapsed(read(sidebarKey) === "1");
+  function applySidebarPreference() {
+    var isMobile = window.matchMedia && window.matchMedia("(max-width: 760px)").matches;
+    setSidebarCollapsed(!isMobile && read(sidebarKey) === "1");
+  }
+
+  applySidebarPreference();
+  window.addEventListener("resize", applySidebarPreference);
   setTheme(read(themeKey) === "dark" ? "dark" : "light");
 
   var sidebarButton = document.querySelector("[data-sidebar-toggle]");

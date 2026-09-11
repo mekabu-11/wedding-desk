@@ -1,5 +1,11 @@
 <header class="page-heading"><div><p class="eyebrow">基本情報</p><h1>結婚式の設定</h1><p>準備の基本情報をまとめておきましょう。</p></div></header><section class="surface narrow"><%= render "form" %></section>
 
+<section class="surface narrow settings-theme" style="margin-top: 24px">
+  <div class="section-heading"><div><p class="eyebrow">表示設定</p><h2>テーマ</h2></div></div>
+  <p class="muted">このブラウザで表示するテーマを切り替えます。</p>
+  <button type="button" class="theme-toggle" data-theme-toggle aria-pressed="false" aria-label="ブラックテーマに切り替え"><span class="theme-toggle-icon" aria-hidden="true">◐</span><span data-theme-label>ブラックテーマ</span></button>
+</section>
+
 <section class="surface narrow" style="margin-top: 24px">
   <div class="section-heading"><div><p class="eyebrow">共有設定</p><h2>ふたりで共有</h2></div><span class="badge muted"><%= current_wedding.memberships.count %>/2人</span></div>
   <% current_wedding.memberships.includes(:user).order(:id).each do |membership| %>
