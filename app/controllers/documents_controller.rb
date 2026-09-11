@@ -2,9 +2,9 @@ class DocumentsController < ApplicationController
   before_action :set_document, only: %i[show destroy retry_analysis organize]
   rate_limit to: 20, within: 1.hour, only: %i[create retry_analysis]
   def index
-    @source = params[:source].presence_in(Document::SOURCES.keys)
+    @source = Document.source_filter_key(params[:source].to_s)
     @documents = current_wedding.documents.order(created_at: :desc)
-    @documents = @documents.where(source_type: @source) if @source
+    @documents = @documents.where(source_type: Document::SOURCE_FILTERS.fetch(@source).fetch(:types)) if @source
     @page = [params[:page].to_i, 1].max
     @total_count = @documents.count
     @documents = @documents.offset((@page - 1) * 30).limit(30)

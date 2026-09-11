@@ -59,6 +59,21 @@ class Phase3Test < ActionDispatch::IntegrationTest
     assert_nil document.occurred_at
   end
 
+  test "document type filters group legacy text sources" do
+    @wedding.documents.create!(title: "メール連絡", source_type: "email", direction: "incoming", original_text: "メール本文")
+    @wedding.documents.create!(title: "LINE連絡", source_type: "line", direction: "incoming", original_text: "LINE本文")
+    @wedding.documents.create!(title: "写真資料", source_type: "photo", direction: "unknown", original_text: "写真の説明")
+
+    get documents_path(source: "text")
+    assert_response :success
+    assert_includes response.body, "メール連絡"
+    assert_includes response.body, "LINE連絡"
+    refute_includes response.body, "写真資料"
+    assert_includes response.body, "写真・スキャン"
+    assert_includes response.body, "PDF・ファイル"
+    assert_includes response.body, "打ち合わせ"
+  end
+
   test "save only does not start analysis or cross-document organization" do
     post documents_path, params: { document: { title: "保存だけの架空資料", source_type: "meeting", direction: "incoming", original_text: "保存だけ確認する" }, save_only: "1" }
     document = @wedding.documents.order(:id).last

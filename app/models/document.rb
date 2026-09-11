@@ -4,7 +4,14 @@ require "open3"
 class Document < ApplicationRecord
   SOURCES = {
     "email" => "メール", "line" => "LINE", "meeting" => "打ち合わせ",
-    "text" => "文章入力", "photo" => "写真・スキャン", "file" => "PDF・ファイル", "other" => "その他"
+    "text" => "文章", "photo" => "写真・スキャン", "file" => "PDF・ファイル", "other" => "その他"
+  }.freeze
+  SOURCE_FILTERS = {
+    "text" => { label: "文章", types: %w[text email line] },
+    "photo" => { label: "写真・スキャン", types: %w[photo] },
+    "file" => { label: "PDF・ファイル", types: %w[file] },
+    "meeting" => { label: "打ち合わせ", types: %w[meeting] },
+    "other" => { label: "その他", types: %w[other] }
   }.freeze
   DIRECTIONS = { "incoming" => "相手から受信", "outgoing" => "自分から送信", "memo" => "メモ", "mixed" => "複数のやり取り", "unknown" => "不明" }.freeze
   belongs_to :wedding
@@ -40,6 +47,10 @@ class Document < ApplicationRecord
     return true unless Rails.configuration.active_storage.service.to_sym == :supabase
 
     %w[SUPABASE_STORAGE_ENDPOINT SUPABASE_STORAGE_BUCKET SUPABASE_STORAGE_ACCESS_KEY_ID SUPABASE_STORAGE_SECRET_ACCESS_KEY].all? { |key| ENV[key].present? }
+  end
+
+  def self.source_filter_key(value)
+    SOURCE_FILTERS.keys.find { |key| key == value || SOURCE_FILTERS.fetch(key)[:types].include?(value) }
   end
 
   def attachment_inputs
