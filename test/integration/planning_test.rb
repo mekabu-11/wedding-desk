@@ -86,6 +86,9 @@ class PlanningTest < ActionDispatch::IntegrationTest
     task = @wedding.tasks.create!(origin: "manual", title: "架空BGMタスク")
     post task_planning_links_path, params: { planning_item_id: item.id, task_id: task.id }
     assert_equal 1, item.reload.task_planning_links.count
+    get edit_task_path(task)
+    assert_select "form.related-planning-form", count: 1
+    assert_select "form.related-planning-form input[type='submit'][value='追加']", count: 1
     delete task_planning_link_path(item.task_planning_links.first)
     assert_empty item.reload.task_planning_links
     get planning_item_path(item)

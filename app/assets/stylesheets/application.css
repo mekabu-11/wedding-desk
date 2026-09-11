@@ -375,3 +375,12 @@ html[data-theme="dark"] .task-filter-dialog-close:hover{background:#25332b}
 .wedding-mini .wedding-mini-date{display:flex;align-items:baseline;gap:7px;margin-top:6px;font-family:inherit;font-size:11px;line-height:1.5;letter-spacing:0;color:var(--muted)}
 .wedding-mini-date>span{font-size:10px;color:var(--muted)}
 .wedding-mini-date time{font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* Related planning links are a small add action, not a two-column page form. */
+.related-planning-form{display:grid;grid-template-columns:minmax(0,620px) auto;align-items:end;gap:13px;margin-top:17px}
+.related-planning-form .field{margin:0}
+.related-planning-form .button{min-width:84px}
+@media(max-width:760px){
+  .related-planning-form{grid-template-columns:1fr;gap:10px}
+  .related-planning-form .button{width:100%}
+}
