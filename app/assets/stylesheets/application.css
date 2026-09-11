@@ -300,3 +300,12 @@ html[data-theme="dark"] .gantt-header-label{background:var(--soft)}
   .document-actions{align-items:stretch}
   .activity-list .activity-detail{font-size:11px}
 }
+
+/* Keep the collapse control in the same row as the brand on narrow screens. */
+@media(max-width:760px){
+  .sidebar-head{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:13px}
+  .sidebar-head .brand{min-width:0}
+  .sidebar-head .brand-copy{min-width:0;overflow:hidden;text-overflow:ellipsis}
+  .sidebar-head-tools{min-width:38px;justify-content:flex-end}
+  .sidebar-toggle{flex:0 0 38px}
+}
