@@ -82,6 +82,28 @@ module ApplicationHelper
       "provider_unavailable" => "AIサービスへ接続できませんでした。再試行してください。"
     }.fetch(code, "解析を完了できませんでした。資料は保存されています。再試行してください。")
   end
+
+  def change_group_subject(events)
+    event = events.first
+    label = ChangeEvent::TARGET_LABELS.fetch(event.target_type, ["項目", nil]).first
+    "#{label} #{events.size}件"
+  end
+
+  def change_group_action(events)
+    event = events.first
+    if event.target_type == "Guest" && event.action == "guest_attendance_changed"
+      counts = events.flat_map(&:changed_field_labels).tally
+      return counts.map { |label, count| "#{label}変更 #{count}人" }.join(" / ")
+    end
+
+    "#{event.action_label}（#{events.size}件）"
+  end
+
+  def change_actor_label(event)
+    return unless event.actor
+
+    event.actor == current_user ? "本人" : event.actor.email
+  end
   def document_status(document)
     run = document.latest_run
     return ["未解析", "muted"] unless run

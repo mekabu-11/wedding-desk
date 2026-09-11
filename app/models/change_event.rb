@@ -98,6 +98,12 @@ class ChangeEvent < ApplicationRecord
     remaining.positive? ? "#{shown.join(' / ')} / ほか#{remaining}項目" : shown.join(" / ")
   end
 
+  def changed_field_labels
+    parsed_changes.filter_map do |field, values|
+      field_label(field) if values[:before] != values[:after]
+    end
+  end
+
   private
 
   def parsed_changes

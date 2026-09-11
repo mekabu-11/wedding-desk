@@ -127,6 +127,25 @@ class WorkflowTest < ActionDispatch::IntegrationTest
     assert_select "[data-theme-toggle]", count: 1
   end
 
+  test "dashboard groups guest changes made in the same batch" do
+    owner = create_owner
+    wedding = create_wedding(owner)
+    fixed_time = Time.zone.local(2026, 9, 10, 0, 20, 50)
+    3.times do |index|
+      guest = wedding.guests.create!(name: "架空ゲスト#{index}", attendance: "unanswered")
+      ChangeEvent.create!(wedding: wedding, target: guest, action: "guest_attendance_changed",
+        before: { attendance: "unanswered" }.to_json, after: { attendance: "attending" }.to_json,
+        source: "guest", created_at: fixed_time, updated_at: fixed_time)
+    end
+    sign_in(owner)
+
+    get root_path
+    assert_response :success
+    assert_includes response.body, "ゲスト 3件"
+    assert_includes response.body, "出欠変更 3人"
+    assert_includes response.body, "個別の変更を見る（3件）"
+  end
+
   test "only the owner can add a member and a wedding is limited to two users" do
     owner = create_owner
     wedding = create_wedding(owner)
