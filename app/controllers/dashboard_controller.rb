@@ -11,7 +11,8 @@ class DashboardController < ApplicationController
       from: monday, to: monday + 6.days, from_time: monday.beginning_of_day, to_time: (monday + 6.days).end_of_day
     ).count
     @overdue_count = current_wedding.tasks.open_items.where("due_on < ? OR due_at < ?", Date.current, Time.current).count
-    @attendance_counts = current_wedding.guests.group(:attendance).count
+    @guest_total = current_wedding.guests.count
+    @attending_count = current_wedding.guests.where(attendance: "attending").count
     @considering_count = current_wedding.planning_options.where(status: "considering").count
     budget_items = current_wedding.budget_items.included.includes(:money_movements).to_a
     @unknown_amount_count = budget_items.count { |item| item.amount_yen.nil? }
