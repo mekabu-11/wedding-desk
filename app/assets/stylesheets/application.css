@@ -336,7 +336,6 @@ html[data-theme="dark"] .gantt-header-label{background:var(--soft)}
 .task-filter-dialog-form .field:last-of-type,.task-filter-dialog-form>.button{grid-column:1/-1}
 .task-filter-dialog-form>.button{justify-self:end}
 .task-select-row{grid-template-columns:36px 1fr}
-.task-select-row .task-check{display:none}
 .task-select-row>input{margin:auto}
 .list-surface .task-row{padding:11px 15px;min-height:61px}
 .list-surface .row-content .micro{margin-top:3px}

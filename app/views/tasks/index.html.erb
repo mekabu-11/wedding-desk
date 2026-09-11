@@ -5,6 +5,7 @@
 <%= link_to "一覧", tasks_path(request.query_parameters.except("view")), class: "button #{@view == 'list' ? 'primary' : 'secondary'}" %>
 <%= link_to "ガント", tasks_path(request.query_parameters.merge(view: "gantt")), class: "button #{@view == 'gantt' ? 'primary' : 'secondary'}" %>
 <button type="button" class="button secondary task-filter-trigger" data-filter-open aria-haspopup="dialog" aria-controls="task-filter-dialog" aria-expanded="false"><span>絞り込み</span><% if filters_active %><span class="badge green">適用中</span><% end %></button>
+<% if @view == "list" %><button type="submit" form="task-selection-form" class="button secondary task-selection-submit">選択を一括変更</button><% end %>
 <%= form_with url: bulk_preview_tasks_path, method: :post, class: "inline-form" do %><%= hidden_field_tag :selection, "filtered" %><%= hidden_field_tag :q, @query %><%= hidden_field_tag :status, @status %><%= hidden_field_tag :assignee, @assignee %><%= hidden_field_tag :category, @category %><%= hidden_field_tag :period, @period %><%= submit_tag "絞り込み結果を一括変更", class: "button secondary", disabled: @search_limit_exceeded %><% end %>
 </div>
 <dialog class="task-filter-dialog" id="task-filter-dialog" data-filter-dialog aria-labelledby="task-filter-title">
@@ -24,14 +25,13 @@
 <p class="muted task-result-count"><%= @total_count %>件<%= ' · 今週に期間が重なるタスク。開始日なしは今週期限のものを表示。' if @period == 'week' %></p>
 </div>
 <% if @view == "list" %>
-<%= form_with url: bulk_preview_tasks_path, method: :post do %>
+<%= form_with url: bulk_preview_tasks_path, method: :post, id: "task-selection-form" do %>
 <div class="task-list-scroll">
 <section class="surface list-surface">
 <% if @tasks.empty? %><div class="empty-state"><h2>該当するタスクはありません</h2><p>タスクを追加するか、絞り込み条件を変更してください。</p></div><% end %>
-<% @tasks.each do |task| %><div class="task-select-row"><%= check_box_tag "task_ids[]", task.id, false, aria: { label: "#{task.title}を選択" } %><%= render "row", task: task %><%= hidden_field_tag "versions[#{task.id}]", task.lock_version %></div><% end %>
+<% @tasks.each do |task| %><div class="task-select-row"><%= check_box_tag "task_ids[]", task.id, false, aria: { label: "#{task.title}を選択" } %><%= render "row", task: task, hide_status_check: true %><%= hidden_field_tag "versions[#{task.id}]", task.lock_version %></div><% end %>
 </section>
 </div>
-<div class="task-actions"><%= submit_tag "現在のページを一括変更", class: "button secondary" %><small>チェックした現在ページのタスクだけが対象です。</small></div>
 <% end %>
 <%= render "shared/pagination", total: @total_count, page: @page %>
 <% else %>
