@@ -166,9 +166,9 @@ small,.micro,.text-link,.field small{font-size:13px}
 }
 
 /* Workspace controls */
-.sidebar-head{position:relative;display:flex;align-items:flex-start;justify-content:space-between;gap:13px;min-height:40px}
-.sidebar-head .brand{min-width:0;padding-right:34px}
-.sidebar-head-tools{position:absolute;top:0;right:0;display:flex;align-items:center;gap:6px}
+.sidebar-head{display:flex;flex-direction:column;align-items:stretch;gap:12px;min-height:40px}
+.sidebar-head .brand{min-width:0;padding-right:0}
+.sidebar-head-tools{position:static;display:flex;align-items:center;justify-content:flex-end;gap:6px}
 .sidebar-toggle,.theme-toggle{display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line);background:var(--white);color:var(--muted);border-radius:7px;min-width:32px;height:32px;padding:0 8px;font-size:14px;line-height:1}
 .sidebar-toggle:hover,.theme-toggle:hover{color:var(--green);border-color:#aebfb3;background:var(--soft)}
 .theme-toggle{gap:7px;font-size:11px;white-space:nowrap}
