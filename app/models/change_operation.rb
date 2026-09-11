@@ -1,7 +1,7 @@
 class ChangeOperation < ApplicationRecord
   ACTIONS = %w[create update link].freeze
   STATES = %w[pending applied failed].freeze
-  ENTITY_TYPES = %w[Task Guest Household PlanningItem PlanningOption MusicDetail GiftSet GiftAssignment BudgetItem MoneyMovement].freeze
+  ENTITY_TYPES = %w[Task Guest Household PlanningItem PlanningOption MusicDetail GiftSet GiftAssignment GuestGiftAssignment BudgetItem MoneyMovement].freeze
   LINK_ENTITY_TYPES = %w[SourceLink PlanningCostLink TaskPlanningLink].freeze
   ALL_ENTITY_TYPES = (ENTITY_TYPES + LINK_ENTITY_TYPES).freeze
   FORBIDDEN_ATTRIBUTES = %w[id wedding_id user_id lock_version candidate_id document_id created_at updated_at].freeze
@@ -14,6 +14,7 @@ class ChangeOperation < ApplicationRecord
     "MusicDetail" => %w[_key wish_track_a wish_track_b selected_track artist start_offset_seconds original_text scene planning_option_id planning_option_key],
     "GiftSet" => %w[_key name notes],
     "GiftAssignment" => %w[_key household_id household_key gift_set_id gift_set_key quantity included],
+    "GuestGiftAssignment" => %w[_key guest_id guest_key gift_set_id gift_set_key quantity included],
     "BudgetItem" => %w[direction category title amount_yen certainty inclusion calculation_mode quantity_basis unit_price manual_quantity tax_basis tax_rate rounding source_kind source_id],
     "MoneyMovement" => %w[_key occurred_on kind amount_yen note budget_item_id budget_item_key]
   }.freeze

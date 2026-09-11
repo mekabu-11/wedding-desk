@@ -5,7 +5,7 @@ class BudgetItemsController < ApplicationController
     @direction = params[:direction].presence_in(BudgetItem::DIRECTIONS.keys)
     @certainty = params[:certainty].presence_in(BudgetItem::CERTAINTIES.keys)
     @payment_status_filter = params[:payment_status].presence_in(BudgetItem::PAYMENT_STATUS_FILTERS.keys)
-    scope = current_wedding.budget_items.includes(:money_movements, :gift_assignment).order(:id)
+    scope = current_wedding.budget_items.includes(:money_movements, :gift_assignment, :guest_gift_assignment).order(:id)
     scope = scope.where(direction: @direction) if @direction
     scope = scope.where(certainty: @certainty) if @certainty
     @page = [params[:page].to_i, 1].max
@@ -25,17 +25,25 @@ class BudgetItemsController < ApplicationController
 
   def new
     @budget_item = current_wedding.budget_items.new(direction: "expense", certainty: "estimate", inclusion: "included", category: "other")
+    @planning_item = planning_item_from_param
   end
 
   def create
     @budget_item = current_wedding.budget_items.new(budget_item_params.merge(source_kind: "manual", source_id: nil))
+    @planning_item = planning_item_from_param
     saved = ActiveRecord::Base.transaction do
       result = @budget_item.save
-      record_change!(@budget_item, "budget_item_created", after: budget_change_snapshot(@budget_item)) if result
+      if result
+        record_change!(@budget_item, "budget_item_created", after: budget_change_snapshot(@budget_item))
+        if @planning_item
+          current_wedding.planning_cost_links.create!(planning_item: @planning_item, budget_item: @budget_item)
+          record_change!(@planning_item, "planning_cost_link_created", after: { budget_item_id: @budget_item.id, budget_item_title: @budget_item.title })
+        end
+      end
       result
     end
     if saved
-      redirect_to budget_items_path, notice: "金額を追加しました。", status: :see_other
+      redirect_to @planning_item ? planning_item_path(@planning_item) : budget_items_path, notice: "金額を追加しました。", status: :see_other
     else
       render :new, status: :unprocessable_entity
     end
@@ -89,5 +97,11 @@ class BudgetItemsController < ApplicationController
     change_snapshot(item, :direction, :category, :title, :amount_yen, :certainty, :inclusion,
       :calculation_mode, :quantity_basis, :unit_price, :manual_quantity, :tax_basis, :tax_rate,
       :rounding, :source_kind, :source_id)
+  end
+
+  def planning_item_from_param
+    return if params[:planning_item_id].blank?
+
+    current_wedding.planning_items.find(params[:planning_item_id])
   end
 end

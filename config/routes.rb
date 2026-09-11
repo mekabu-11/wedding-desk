@@ -30,6 +30,7 @@ Rails.application.routes.draw do
   resources :cash_gift_rules, only: %i[new create edit update destroy]
   resources :gift_sets, only: %i[new create edit update destroy]
   resources :gift_assignments, only: %i[new create edit update destroy]
+  resources :guest_gift_assignments, only: %i[new create edit update destroy]
   resources :budget_items, only: %i[index new create edit update destroy] do
     resources :money_movements, only: %i[new create edit update destroy]
   end

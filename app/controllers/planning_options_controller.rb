@@ -36,25 +36,28 @@ class PlanningOptionsController < ApplicationController
   end
 
   def select
-    cost_mode = params[:cost_mode].presence
-    unless %w[existing new none unknown].include?(cost_mode)
-      return redirect_to planning_item_path(@option.planning_item), alert: "採用時の費用処理を選択してください。"
-    end
+    cost_mode = params[:cost_mode].presence_in(%w[existing new unknown none]) || "none"
     PlanningOption.transaction do
       @option.planning_item.with_lock do
         previous = @option.planning_item.planning_options.where(status: "selected").where.not(id: @option.id).first
-        @option.planning_item.planning_cost_links.delete_all
+        cost_change = retire_previous_option_costs(previous)
         @option.planning_item.planning_options.where.not(id: @option.id).where(status: "selected").update_all(status: "rejected", updated_at: Time.current)
         @option.update!(status: "selected")
-        create_cost_link!(cost_mode)
+        budget_item = create_cost_link!(cost_mode)
         ChangeEvent.record!(wedding: current_wedding, target: @option, action: "planning_option_selected",
-          before: { selected_option_id: previous&.id }.to_json, after: { selected_option_id: @option.id, cost_mode: cost_mode }.to_json,
+          before: { selected_option_id: previous&.id }.to_json, after: { selected_option_id: @option.id }.to_json,
           source: "manual", actor: current_user)
+        if cost_change[:excluded].any? || cost_change[:preserved].any? || budget_item
+          ChangeEvent.record!(wedding: current_wedding, target: @option, action: "planning_option_cost_changed",
+            before: { previous_option_id: previous&.id, preserved_budget_item_ids: cost_change[:preserved] }.to_json,
+            after: { cost_mode: cost_mode, created_budget_item_id: budget_item&.id, excluded_budget_item_ids: cost_change[:excluded] }.to_json,
+            source: "manual", actor: current_user)
+        end
       end
     end
     redirect_to planning_item_path(@option.planning_item), notice: "候補を採用しました。", status: :see_other
-  rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique, ActionController::ParameterMissing
-    redirect_to planning_item_path(@option.planning_item), alert: "採用と費用の紐付けを保存できませんでした。入力を確認してください。", status: :see_other
+  rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotFound, ActiveRecord::RecordNotUnique
+    redirect_to planning_item_path(@option.planning_item), alert: "候補を採用できませんでした。入力を確認してください。", status: :see_other
   end
 
   def reject
@@ -106,12 +109,41 @@ class PlanningOptionsController < ApplicationController
 
     budget_item = case cost_mode
     when "existing"
-      current_wedding.budget_items.find(params.require(:budget_item_id))
+      current_wedding.budget_items.find_by(id: params[:budget_item_id])
     when "new", "unknown"
       current_wedding.budget_items.create!(direction: "expense", category: @option.planning_item.category,
         title: @option.title, amount_yen: cost_mode == "unknown" ? nil : @option.reference_price_yen,
-        certainty: "estimate", inclusion: "included", calculation_mode: "manual", source_kind: "manual")
+        certainty: "estimate", inclusion: "included", calculation_mode: "manual",
+        source_kind: "planning_option", source_id: @option.id)
     end
+    return unless budget_item
+
     current_wedding.planning_cost_links.create!(planning_item: @option.planning_item, budget_item: budget_item)
+    budget_item
   end
+
+  def retire_previous_option_costs(previous)
+    result = { excluded: [], preserved: [] }
+    return result unless previous
+
+    linked_budget_ids = @option.planning_item.planning_cost_links.select(:budget_item_id)
+    current_wedding.budget_items.where(source_kind: "planning_option", source_id: previous.id, id: linked_budget_ids).find_each do |budget_item|
+      can_exclude = budget_item.certainty == "estimate" && !budget_item.money_movements.exists?
+      can_exclude &&= !budget_item.planning_cost_links.where.not(planning_item_id: @option.planning_item.id).exists?
+      if can_exclude
+        before = planning_cost_snapshot(budget_item)
+        budget_item.update!(inclusion: "excluded")
+        record_change!(budget_item, "planning_option_cost_excluded", before: before, after: planning_cost_snapshot(budget_item))
+        result[:excluded] << budget_item.id
+      else
+        result[:preserved] << budget_item.id
+      end
+    end
+    result
+  end
+
+  def planning_cost_snapshot(budget_item)
+    change_snapshot(budget_item, :title, :amount_yen, :certainty, :inclusion, :source_kind, :source_id)
+  end
+
 end

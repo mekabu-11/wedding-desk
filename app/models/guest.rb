@@ -9,6 +9,7 @@ class Guest < ApplicationRecord
   belongs_to :wedding
   belongs_to :household, optional: true
   belongs_to :seating_table, optional: true
+  has_one :guest_gift_assignment, dependent: :restrict_with_error
 
   encrypts :name, :relationship, :roles, :allergies, :notes
   serialize :roles, coder: JSON

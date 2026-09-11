@@ -1,1 +1,37 @@
-<%= render "shared/errors", record: budget_item %><%= form_with model: budget_item, class: "form-stack" do |f| %><%= f.hidden_field :lock_version %><div class="field"><%= f.label :title, "項目名" %><%= f.text_field :title, required: true, maxlength: 150 %></div><div class="form-grid"><div class="field"><%= f.label :direction, "収支" %><%= f.select :direction, BudgetItem::DIRECTIONS.map { |k,v| [v,k] } %></div><div class="field"><%= f.label :category, "カテゴリ" %><%= f.text_field :category, required: true, maxlength: 80, placeholder: "例：会場" %></div></div><div class="form-grid"><div class="field"><%= f.label :amount_yen, "金額（円）" %><%= f.number_field :amount_yen, min: 0, step: 1 %></div><div class="field"><%= f.label :certainty, "金額の状態" %><%= f.select :certainty, BudgetItem::CERTAINTIES.map { |k,v| [v,k] } %></div></div><div class="form-grid"><div class="field"><%= f.label :inclusion, "集計" %><%= f.select :inclusion, BudgetItem::INCLUSIONS.map { |k,v| [v,k] } %></div><div class="field"><%= f.label :calculation_mode, "計算方法" %><%= f.select :calculation_mode, BudgetItem::CALCULATION_MODES.map { |k,v| [v,k] } %></div></div><details><summary>単価×数量の詳細</summary><div class="form-grid"><div class="field"><%= f.label :unit_price, "単価（円）" %><%= f.number_field :unit_price, min: 0, step: 1 %></div><div class="field"><%= f.label :quantity_basis, "数量基準" %><%= f.select :quantity_basis, [["選択してください", ""]] + BudgetItem::QUANTITY_BASES.map { |k,v| [v,k] } %></div></div><div class="field"><%= f.label :manual_quantity, "手動数量" %><%= f.number_field :manual_quantity, min: 1, step: 1 %><small>数量計算を選んだ時だけ使います。金額は保存時に生成されます。</small></div></details><details><summary>税設定</summary><div class="form-grid"><div class="field"><%= f.label :tax_basis, "税区分" %><%= f.select :tax_basis, BudgetItem::TAX_BASES.map { |k,v| [v,k] } %></div><div class="field"><%= f.label :tax_rate, "税率（%）" %><%= f.number_field :tax_rate, min: 0, max: 100, step: 0.01 %></div></div><div class="field"><%= f.label :rounding, "丸め" %><%= f.select :rounding, [["切捨て", "floor"], ["四捨五入", "round"], ["切上げ", "ceil"]] %></div></details><p class="callout">金額は1つだけ保存します。支払状況と残額はMoneyMovementの履歴から表示します。</p><%= f.submit budget_item.persisted? ? "保存する" : "金額を追加", class: "button primary" %><% end %>
+<%= render "shared/errors", record: budget_item %>
+<%= form_with model: budget_item, class: "form-stack" do |f| %>
+  <%= f.hidden_field :lock_version %>
+  <%= hidden_field_tag :planning_item_id, @planning_item.id if defined?(@planning_item) && @planning_item %>
+  <% if defined?(@planning_item) && @planning_item %><p class="callout">検討項目「<%= @planning_item.title %>」に関連付けて追加します。</p><% end %>
+  <div class="field"><%= f.label :title, "項目名" %><%= f.text_field :title, required: true, maxlength: 150 %></div>
+  <div class="form-grid">
+    <div class="field"><%= f.label :direction, "収支" %><%= f.select :direction, BudgetItem::DIRECTIONS.map { |k,v| [v,k] } %></div>
+    <div class="field"><%= f.label :category, "カテゴリ" %><%= f.text_field :category, required: true, maxlength: 80, placeholder: "例：会場" %></div>
+  </div>
+  <div class="form-grid">
+    <div class="field"><%= f.label :amount_yen, "金額（円）" %><%= f.number_field :amount_yen, min: 0, step: 1 %></div>
+    <div class="field"><%= f.label :certainty, "金額の状態" %><%= f.select :certainty, BudgetItem::CERTAINTIES.map { |k,v| [v,k] } %></div>
+  </div>
+  <div class="form-grid">
+    <div class="field"><%= f.label :inclusion, "集計" %><%= f.select :inclusion, BudgetItem::INCLUSIONS.map { |k,v| [v,k] } %></div>
+    <div class="field"><%= f.label :calculation_mode, "計算方法" %><%= f.select :calculation_mode, BudgetItem::CALCULATION_MODES.map { |k,v| [v,k] } %></div>
+  </div>
+  <details>
+    <summary>単価×数量の詳細</summary>
+    <div class="form-grid">
+      <div class="field"><%= f.label :unit_price, "単価（円）" %><%= f.number_field :unit_price, min: 0, step: 1 %></div>
+      <div class="field"><%= f.label :quantity_basis, "数量基準" %><%= f.select :quantity_basis, [["選択してください", ""]] + BudgetItem::QUANTITY_BASES.map { |k,v| [v,k] } %></div>
+    </div>
+    <div class="field"><%= f.label :manual_quantity, "手動数量" %><%= f.number_field :manual_quantity, min: 1, step: 1 %><small>数量計算を選んだ時だけ使います。金額は保存時に生成されます。</small></div>
+  </details>
+  <details>
+    <summary>税設定</summary>
+    <div class="form-grid">
+      <div class="field"><%= f.label :tax_basis, "税区分" %><%= f.select :tax_basis, BudgetItem::TAX_BASES.map { |k,v| [v,k] } %></div>
+      <div class="field"><%= f.label :tax_rate, "税率（%）" %><%= f.number_field :tax_rate, min: 0, max: 100, step: 0.01 %></div>
+    </div>
+    <div class="field"><%= f.label :rounding, "丸め" %><%= f.select :rounding, [["切捨て", "floor"], ["四捨五入", "round"], ["切上げ", "ceil"]] %></div>
+  </details>
+  <p class="callout">金額は1つだけ保存します。支払状況と残額はMoneyMovementの履歴から表示します。</p>
+  <%= f.submit budget_item.persisted? ? "保存する" : "金額を追加", class: "button primary" %>
+<% end %>

@@ -24,7 +24,7 @@
       <%= nav_link("ダッシュボード", root_path, controller_name == "dashboard", icon: :overview) %>
       <%= nav_link("資料と連絡", documents_path, controller_name.in?(%w[documents candidates]), icon: :documents) %>
       <%= nav_link("やること", tasks_path, controller_name == "tasks", icon: :tasks) %>
-      <%= nav_link("ゲスト", guests_path, controller_name.in?(%w[guests households seating_tables cash_gift_rules gift_sets gift_assignments]), icon: :guests) %>
+      <%= nav_link("ゲスト", guests_path, controller_name.in?(%w[guests households seating_tables cash_gift_rules gift_sets gift_assignments guest_gift_assignments]), icon: :guests) %>
       <%= nav_link("お金", budget_items_path, controller_name.in?(%w[budget_items money_movements]), icon: :money) %>
       <%= nav_link("検討・決定", planning_items_path, controller_name.in?(%w[planning_items planning_options music_details planning_cost_links task_planning_links]), icon: :planning) %>
     </nav>

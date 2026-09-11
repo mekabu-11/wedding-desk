@@ -1,6 +1,6 @@
 class TasksController < ApplicationController
   before_action :set_task, only: %i[edit update]
-  before_action :load_planning_context, only: %i[edit update]
+  before_action :load_planning_context, only: %i[new create edit update]
   def index
     @assignee_options = Task.assignee_options(current_wedding)
     @status = params[:status].presence_in(Task::STATUSES.keys)
@@ -59,16 +59,24 @@ class TasksController < ApplicationController
   def edit; end
   def new
     @task = current_wedding.tasks.new(origin: "manual")
+    @planning_item = planning_item_from_param
   end
   def create
     @task = current_wedding.tasks.new(task_params.merge(origin: "manual"))
+    @planning_item = planning_item_from_param
     saved = ActiveRecord::Base.transaction do
       result = @task.save
-      record_change!(@task, "task_created", after: change_snapshot(@task, :title, :description, :assignee, :starts_on, :due_on, :due_at, :status, :category)) if result
+      if result
+        record_change!(@task, "task_created", after: change_snapshot(@task, :title, :description, :assignee, :starts_on, :due_on, :due_at, :status, :category))
+        if @planning_item
+          current_wedding.task_planning_links.create!(planning_item: @planning_item, task: @task)
+          record_change!(@planning_item, "task_planning_link_created", after: { task_id: @task.id, task_title: @task.title })
+        end
+      end
       result
     end
     if saved
-      redirect_to tasks_path, notice: "タスクを追加しました。", status: :see_other
+      redirect_to @planning_item ? planning_item_path(@planning_item) : tasks_path, notice: "タスクを追加しました。", status: :see_other
     else
       render :new, status: :unprocessable_entity
     end
@@ -137,6 +145,12 @@ class TasksController < ApplicationController
 
   def load_planning_context
     @planning_items = current_wedding.planning_items.order(:position, :id).limit(200)
-    @task_planning_links = @task.task_planning_links.includes(:planning_item).order(:id)
+    @task_planning_links = @task&.task_planning_links&.includes(:planning_item)&.order(:id) || []
+  end
+
+  def planning_item_from_param
+    return if params[:planning_item_id].blank?
+
+    current_wedding.planning_items.find(params[:planning_item_id])
   end
 end

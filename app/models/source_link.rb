@@ -1,5 +1,5 @@
 class SourceLink < ApplicationRecord
-  TARGET_TYPES = %w[Task Guest Household PlanningItem PlanningOption MusicDetail GiftSet GiftAssignment BudgetItem MoneyMovement].freeze
+  TARGET_TYPES = %w[Task Guest Household PlanningItem PlanningOption MusicDetail GiftSet GiftAssignment GuestGiftAssignment BudgetItem MoneyMovement].freeze
 
   belongs_to :wedding
   belongs_to :document

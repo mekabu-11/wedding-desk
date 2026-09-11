@@ -1,0 +1,3 @@
+<%= link_to "← 引き出物", guests_path(tab: "gifts"), class: "back-link" %>
+<header class="page-heading"><div><h1>個人に引き出物を割り当てる</h1><p>世帯セットとは別に、特定の人だけセットを変えたり追加したりできます。</p></div></header>
+<section class="surface narrow"><%= render "form", guest_gift_assignment: @guest_gift_assignment, guests: @guests, gift_sets: @gift_sets %></section>

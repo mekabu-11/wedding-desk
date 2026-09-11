@@ -1,5 +1,17 @@
 <%= link_to "← 検討・決定", planning_items_path(category: @planning_item.category), class: "back-link" %>
 <header class="page-heading"><div><p class="eyebrow"><%= PlanningItem::CATEGORIES[@planning_item.category] %></p><h1><%= @planning_item.title %></h1><p><%= @planning_item.notes.presence || "候補を追加して検討を進めます。" %></p></div><%= link_to "項目を編集", edit_planning_item_path(@planning_item), class: "button secondary" %></header>
+<section class="surface decision-summary">
+  <div class="section-heading"><div><p class="eyebrow">決定内容</p><h2><%= @selected_option ? @selected_option.title : "まだ決まっていません" %></h2></div><%= status_badge(@selected_option ? "採用済み" : "候補を比較中", tone: @selected_option ? :positive : :muted) %></div>
+  <% if @selected_option %>
+    <p class="muted"><%= @selected_option.description.presence || "この項目で採用した候補です。" %></p>
+  <% else %>
+    <p class="muted">候補を採用すると、ここに決定内容が表示されます。やることや費用は候補とは別に残ります。</p>
+  <% end %>
+  <div class="decision-summary-grid">
+    <div><p class="eyebrow">関係するやること</p><% if @task_links.empty? %><p class="micro">まだありません</p><% else %><% @task_links.each do |link| %><p><%= link_to link.task.title, edit_task_path(link.task) %></p><% end %><% end %></div>
+    <div><p class="eyebrow">関係するお金</p><% if @cost_links.empty? %><p class="micro">まだありません</p><% else %><% @cost_links.each do |link| %><p><%= link_to link.budget_item.title, edit_budget_item_path(link.budget_item) %><% if link.budget_item.amount_yen %> · <%= number_to_currency(link.budget_item.amount_yen, unit: "", precision: 0) %>円<% end %></p><% end %><% end %></div>
+  </div>
+</section>
 <section class="surface">
   <div class="section-heading"><div><h2>候補</h2><p class="micro">一般項目は候補1件でも採用できます。</p></div></div>
 <form action="<%= planning_item_planning_options_path(@planning_item) %>" method="post" class="form-stack"><%= hidden_field_tag :authenticity_token, form_authenticity_token %>
@@ -18,7 +30,7 @@
       <div class="task-actions" style="margin-top:13px">
         <% unless option.selected? %>
 <form action="<%= select_planning_option_path(option) %>" method="post" class="form-stack"><%= hidden_field_tag :authenticity_token, form_authenticity_token %>
-            <div class="form-grid"><div class="field"><%= label_tag :cost_mode, "採用時の費用" %><%= select_tag :cost_mode, options_for_select(@cost_mode_options), required: true %></div><div class="field"><%= label_tag :budget_item_id, "既存費用" %><%= select_tag :budget_item_id, options_for_select([["選択してください", ""]] + @budget_item_options) %></div></div>
+            <p class="micro">候補の採用だけを変更します。やること・費用は下で別に関連付けます。候補に自動作成された概算費用が残っている場合だけ、入出金履歴がなければ除外して履歴を残します。</p>
             <%= submit_tag "この候補を採用", class: "button primary" %>
           </form>
           <%= button_to "見送る", reject_planning_option_path(option), method: :post, class: "button secondary" %>
@@ -28,11 +40,11 @@
     </article>
   <% end %>
 </section>
-<section class="surface" style="margin-top:24px"><div class="section-heading"><h2>関連する費用</h2></div>
+<section class="surface" style="margin-top:24px"><div class="section-heading"><div><h2>関係するお金</h2><p class="micro">候補を変更しても、この関連は残ります。</p></div><%= link_to "お金を追加", new_budget_item_path(planning_item_id: @planning_item.id), class: "button secondary" %></div>
   <% if @cost_links.empty? %><p class="muted">紐付いた費用はありません。</p><% else %><% @cost_links.each do |link| %><p><%= link.budget_item.title %> · <%= link.budget_item.amount_yen ? "#{number_to_currency(link.budget_item.amount_yen, unit: '', precision: 0)}円" : "金額未確認" %> <%= button_to "解除", planning_cost_link_path(link), method: :delete, class: "button secondary" %></p><% end %><% end %>
 <form action="<%= planning_cost_links_path %>" method="post" class="form-grid"><%= hidden_field_tag :authenticity_token, form_authenticity_token %><%= hidden_field_tag :planning_item_id, @planning_item.id %><div class="field"><%= label_tag :budget_item_id, "登録済みの金額" %><%= select_tag :budget_item_id, options_for_select([["選択してください", ""]] + @budget_item_options), required: true %></div><%= submit_tag "費用を追加", class: "button secondary" %></form>
 </section>
-<section class="surface" style="margin-top:24px"><div class="section-heading"><h2>関連タスク</h2></div>
+<section class="surface" style="margin-top:24px"><div class="section-heading"><div><h2>関係するやること</h2><p class="micro">候補を変更しても、この関連は残ります。</p></div><%= link_to "やることを追加", new_task_path(planning_item_id: @planning_item.id), class: "button secondary" %></div>
   <% @task_links.each do |link| %><p><%= link.task.title %> <%= button_to "解除", task_planning_link_path(link), method: :delete, class: "button secondary" %></p><% end %>
 <form action="<%= task_planning_links_path %>" method="post" class="form-grid"><%= hidden_field_tag :authenticity_token, form_authenticity_token %><%= hidden_field_tag :planning_item_id, @planning_item.id %><div class="field"><%= label_tag :task_id, "タスクを追加" %><%= select_tag :task_id, options_for_select([["選択してください", ""]] + @task_options), required: true %></div><%= submit_tag "タスクを追加", class: "button secondary" %></form>
 </section>

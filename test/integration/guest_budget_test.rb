@@ -14,7 +14,7 @@ class GuestBudgetTest < ActionDispatch::IntegrationTest
       assert_response :success
     end
     [new_guest_path, new_household_path, new_seating_table_path, new_cash_gift_rule_path,
-      new_gift_set_path, new_gift_assignment_path, new_budget_item_path].each do |path|
+      new_gift_set_path, new_gift_assignment_path, new_guest_gift_assignment_path, new_budget_item_path].each do |path|
       get path
       assert_response :success
     end
@@ -314,5 +314,38 @@ class GuestBudgetTest < ActionDispatch::IntegrationTest
     set.gift_set_items.first.update!(unit_price_yen: 6_000)
     assert_equal [6_000, 6_000], estimate_items.map { |item| item.reload.amount_yen }
     assert_equal 5_000, confirmed_item.reload.amount_yen
+  end
+
+  test "individual gift assignment creates one linked budget item and can coexist with household assignment" do
+    household = @wedding.households.create!(code: "H-IND-GIFT", name: "架空個人引出物家")
+    guest = household.guests.create!(name: "架空個別 太郎", attendance: "attending")
+    household_set = @wedding.gift_sets.create!(name: "架空世帯セット")
+    household_set.gift_set_items.create!(kind: "gift", name: "架空世帯品", unit_price_yen: 5_000)
+    individual_set = @wedding.gift_sets.create!(name: "架空個人セット")
+    individual_set.gift_set_items.create!(kind: "gift", name: "架空個人品", unit_price_yen: 3_000)
+    @wedding.gift_assignments.create!(household: household, gift_set: household_set, quantity: 1)
+
+    post guest_gift_assignments_path, params: { guest_gift_assignment: { guest_id: guest.id, gift_set_id: individual_set.id, quantity: 1, included: true } }
+    assert_redirected_to guests_path(tab: "gifts")
+    assignment = @wedding.guest_gift_assignments.find_by!(guest: guest)
+    assert_equal 3_000, assignment.budget_item.reload.amount_yen
+    assert_equal "guest_gift_assignment", assignment.budget_item.source_kind
+    assert_equal 1, @wedding.budget_items.where(source_kind: "guest_gift_assignment", source_id: assignment.id).count
+  end
+
+  test "individual gift estimate recalculates while confirmed amount stays fixed" do
+    guest = @wedding.guests.create!(name: "架空個人再計算")
+    set = @wedding.gift_sets.create!(name: "架空個人再計算セット")
+    item = set.gift_set_items.create!(kind: "gift", name: "架空品", unit_price_yen: 4_000)
+    assignment = @wedding.guest_gift_assignments.create!(guest: guest, gift_set: set)
+    budget = @wedding.budget_items.create!(direction: "expense", category: "gift", title: "架空個人再計算費", amount_yen: 4_000,
+      certainty: "estimate", source_kind: "guest_gift_assignment", source_id: assignment.id)
+    assignment.update!(budget_item: budget)
+
+    item.update!(unit_price_yen: 4_500)
+    assert_equal 4_500, budget.reload.amount_yen
+    budget.update!(certainty: "confirmed", amount_yen: 5_000)
+    item.update!(unit_price_yen: 6_000)
+    assert_equal 5_000, budget.reload.amount_yen
   end
 end

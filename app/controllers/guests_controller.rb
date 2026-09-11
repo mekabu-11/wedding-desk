@@ -120,6 +120,7 @@ class GuestsController < ApplicationController
     @gift_sets = current_wedding.gift_sets.includes(:gift_set_items).order(:id).limit(30)
     @total_count = current_wedding.gift_assignments.count
     @gift_assignments = current_wedding.gift_assignments.includes(:household, :gift_set, :budget_item).order(:id).offset((@page - 1) * 30).limit(30)
+    @guest_gift_assignments = current_wedding.guest_gift_assignments.includes(:guest, :gift_set, :budget_item).order(:id).limit(100)
   end
 
   def searchable_guest?(guest, query)

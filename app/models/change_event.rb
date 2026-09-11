@@ -16,6 +16,7 @@ class ChangeEvent < ApplicationRecord
     "CashGiftRule" => ["ご祝儀区分", :label],
     "GiftSet" => ["引き出物セット", :name],
     "GiftAssignment" => ["引き出物割当", nil],
+    "GuestGiftAssignment" => ["個人引き出物割当", nil],
     "MusicDetail" => ["BGM情報", nil]
   }.freeze
 
@@ -49,6 +50,9 @@ class ChangeEvent < ApplicationRecord
     "gift_assignment_created" => "引き出物を割当",
     "gift_assignment_updated" => "引き出物割当を更新",
     "gift_assignment_deleted" => "引き出物割当を解除",
+    "guest_gift_assignment_created" => "個人引き出物を割当",
+    "guest_gift_assignment_updated" => "個人引き出物割当を更新",
+    "guest_gift_assignment_deleted" => "個人引き出物割当を解除",
     "planning_item_created" => "検討項目を追加",
     "planning_item_updated" => "検討項目を更新",
     "planning_item_deleted" => "検討項目を削除",
@@ -56,6 +60,8 @@ class ChangeEvent < ApplicationRecord
     "planning_option_updated" => "候補を更新",
     "planning_option_deleted" => "候補を削除",
     "planning_option_selected" => "候補を採用",
+    "planning_option_cost_changed" => "候補に伴う費用を更新",
+    "planning_option_cost_excluded" => "旧候補の概算費用を除外",
     "planning_option_rejected" => "候補を見送り",
     "planning_cost_link_created" => "費用を関連付け",
     "planning_cost_link_deleted" => "費用の関連付けを解除",
@@ -103,6 +109,9 @@ class ChangeEvent < ApplicationRecord
     "selected_option_id" => "採用候補",
     "budget_item_id" => "費用",
     "budget_item_title" => "費用",
+    "created_budget_item_id" => "作成した費用",
+    "excluded_budget_item_ids" => "除外した費用",
+    "preserved_budget_item_ids" => "保持した費用",
     "task_id" => "タスク",
     "task_title" => "タスク",
     "planning_option_id" => "候補"
@@ -125,6 +134,7 @@ class ChangeEvent < ApplicationRecord
   def subject_label
     return movement_subject_label if target_type == "MoneyMovement"
     return assignment_subject_label if target_type == "GiftAssignment"
+    return guest_assignment_subject_label if target_type == "GuestGiftAssignment"
     return music_detail_subject_label if target_type == "MusicDetail"
 
     label, attribute = TARGET_LABELS.fetch(target_type, ["項目", nil])
@@ -178,6 +188,11 @@ class ChangeEvent < ApplicationRecord
   def assignment_subject_label
     household_id = parsed_after["household_id"] || parsed_json(before)["household_id"]
     wedding.households.find_by(id: household_id)&.name || "引き出物割当（削除済み）"
+  end
+
+  def guest_assignment_subject_label
+    guest_id = parsed_after["guest_id"] || parsed_json(before)["guest_id"]
+    wedding.guests.find_by(id: guest_id)&.name || "個人引き出物割当（削除済み）"
   end
 
   def music_detail_subject_label

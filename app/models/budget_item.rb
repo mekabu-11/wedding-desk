@@ -8,7 +8,7 @@ class BudgetItem < ApplicationRecord
     "attending_children" => "出席子ども", "attending_households" => "出席世帯", "seating_tables" => "使用テーブル"
   }.freeze
   TAX_BASES = { "inclusive" => "税込", "exclusive" => "税抜", "unknown" => "不明" }.freeze
-  SOURCE_KINDS = { "manual" => "手動", "cash_gift" => "ご祝儀", "travel_guest" => "個人のお車代", "travel_household" => "世帯のお車代", "gift_assignment" => "引き出物割当" }.freeze
+  SOURCE_KINDS = { "manual" => "手動", "planning_option" => "検討候補", "cash_gift" => "ご祝儀", "travel_guest" => "個人のお車代", "travel_household" => "世帯のお車代", "gift_assignment" => "引き出物割当", "guest_gift_assignment" => "個人引き出物割当" }.freeze
   PAYMENT_STATUS_FILTERS = {
     "unsettled" => "未処理",
     "partial" => "一部処理",
@@ -20,6 +20,7 @@ class BudgetItem < ApplicationRecord
   belongs_to :wedding
   has_many :money_movements, dependent: :restrict_with_error
   has_one :gift_assignment, dependent: :nullify
+  has_one :guest_gift_assignment, dependent: :nullify
   has_many :planning_cost_links, dependent: :destroy
   has_many :planning_items, through: :planning_cost_links
 
@@ -128,9 +129,11 @@ class BudgetItem < ApplicationRecord
     return if source_id.blank?
 
     record = case source_kind
+    when "planning_option" then PlanningOption.find_by(id: source_id)
     when "cash_gift", "travel_household" then Household.find_by(id: source_id)
     when "travel_guest" then Guest.find_by(id: source_id)
     when "gift_assignment" then GiftAssignment.find_by(id: source_id)
+    when "guest_gift_assignment" then GuestGiftAssignment.find_by(id: source_id)
     end
     errors.add(:source_id, "結婚式が一致しません") if record.nil? || record.wedding_id != wedding_id
   end

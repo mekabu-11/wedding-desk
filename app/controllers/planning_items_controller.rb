@@ -15,12 +15,12 @@ class PlanningItemsController < ApplicationController
   def show
     @planning_options = @planning_item.planning_options.includes(:music_detail).order(:id).to_a
     @planning_options = @planning_options.sort_by { |option| [option.music_detail&.scene.to_s, option.id] } if @planning_item.category == "music"
+    @selected_option = @planning_options.find(&:selected?)
     @new_option = @planning_item.planning_options.new(status: "draft")
     @budget_items = current_wedding.budget_items.order(:id).limit(200)
     @tasks = current_wedding.tasks.open_items.order(:id).limit(200)
     @budget_item_options = @budget_items.map { |budget_item| ["#{budget_item.title}（#{budget_item.amount_yen || '未確認'}円）", budget_item.id] }
     @task_options = @tasks.map { |task| [task.title, task.id] }
-    @cost_mode_options = [["登録済みの金額に紐付け", "existing"], ["新しい支出を追加", "new"], ["追加費用なし", "none"], ["金額未確認で追加", "unknown"]]
     @cost_links = @planning_item.planning_cost_links.includes(:budget_item).order(:id)
     @task_links = @planning_item.task_planning_links.includes(:task).order(:id)
     history = current_wedding.change_events.where(target_type: "PlanningItem", target_id: @planning_item.id)

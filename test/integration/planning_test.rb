@@ -7,7 +7,7 @@ class PlanningTest < ActionDispatch::IntegrationTest
     sign_in(@owner)
   end
 
-  test "planning CRUD, candidate selection and cost choice are available in the app" do
+  test "planning CRUD, candidate selection and optional cost links are available in the app" do
     post planning_items_path, params: { planning_item: { title: "架空演出", category: "production", notes: "架空メモ" } }
     assert_redirected_to planning_item_path(@wedding.planning_items.last)
     item = @wedding.planning_items.last
@@ -19,7 +19,8 @@ class PlanningTest < ActionDispatch::IntegrationTest
     patch planning_option_path(option_b), params: { planning_option: { status: "considering", lock_version: option_b.lock_version } }
     assert_equal "considering", option_b.reload.status
     budget = @wedding.budget_items.create!(direction: "expense", category: "production", title: "架空会場費", amount_yen: 500_000)
-    post select_planning_option_path(option_a), params: { cost_mode: "existing", budget_item_id: budget.id }
+    post planning_cost_links_path, params: { planning_item_id: item.id, budget_item_id: budget.id }
+    post select_planning_option_path(option_a)
     assert_redirected_to planning_item_path(item)
     assert_equal "selected", option_a.reload.status
     assert_equal 1, item.planning_cost_links.count
@@ -29,10 +30,10 @@ class PlanningTest < ActionDispatch::IntegrationTest
     duplicate_selected = item.planning_options.new(wedding: @wedding, title: "架空重複採用", status: "selected")
     refute duplicate_selected.valid?
     assert_includes duplicate_selected.errors[:status], "1項目につき採用は1件までです"
-    post select_planning_option_path(option_b), params: { cost_mode: "none" }
+    post select_planning_option_path(option_b)
     assert_equal "rejected", option_a.reload.status
     assert_equal "selected", option_b.reload.status
-    assert_empty item.planning_cost_links.reload
+    assert_equal [budget.id], item.planning_cost_links.reload.pluck(:budget_item_id)
     patch planning_option_path(option_b), params: { planning_option: { title: "架空案B更新", status: "selected", lock_version: option_b.lock_version } }
     assert_redirected_to planning_item_path(item)
     assert_equal "selected", option_b.reload.status
@@ -108,28 +109,67 @@ class PlanningTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "元表記"
   end
 
-  test "cost selection and links reject another wedding without changing state" do
+  test "candidate selection ignores foreign cost parameters without changing links" do
     item = @wedding.planning_items.create!(title: "架空ロールバック", category: "other")
     option = item.planning_options.create!(wedding: @wedding, title: "架空採用")
     other = create_wedding
     foreign_budget = other.budget_items.create!(direction: "expense", category: "other", title: "別Wedding費用", amount_yen: 10_000)
     post select_planning_option_path(option), params: { cost_mode: "existing", budget_item_id: foreign_budget.id }
-    assert_response :not_found
-    assert_equal "draft", option.reload.status
+    assert_redirected_to planning_item_path(item)
+    assert_equal "selected", option.reload.status
     assert_empty item.planning_cost_links
-    get edit_planning_item_path(other.planning_items.create!(title: "別Wedding項目", category: "other"))
-    assert_response :not_found
   end
 
-  test "existing cost selection without a budget rolls back with an explanation" do
+  test "candidate selection does not require a cost" do
     item = @wedding.planning_items.create!(title: "架空費用未選択", category: "other")
     option = item.planning_options.create!(wedding: @wedding, title: "架空候補")
 
-    post select_planning_option_path(option), params: { cost_mode: "existing", budget_item_id: "" }
+    post select_planning_option_path(option)
 
     assert_redirected_to planning_item_path(item)
-    assert_equal "draft", option.reload.status
+    assert_equal "selected", option.reload.status
     assert_empty item.planning_cost_links
+  end
+
+  test "candidate cost history is retained and only unpaid estimates are excluded" do
+    item = @wedding.planning_items.create!(title: "架空費用履歴", category: "production")
+    old_option = item.planning_options.create!(wedding: @wedding, title: "架空旧候補", reference_price_yen: 30_000)
+    new_option = item.planning_options.create!(wedding: @wedding, title: "架空新候補")
+
+    post select_planning_option_path(old_option), params: { cost_mode: "new" }
+    old_budget = item.reload.planning_cost_links.first.budget_item
+    assert_equal "planning_option", old_budget.source_kind
+    assert_equal old_option.id, old_budget.source_id
+    assert_equal 30_000, old_budget.amount_yen
+
+    post select_planning_option_path(new_option)
+    assert_equal "excluded", old_budget.reload.inclusion
+    assert old_budget.reload.persisted?
+    assert ChangeEvent.for_target(old_budget).where(action: "planning_option_cost_excluded").exists?
+
+    confirmed_item = @wedding.budget_items.create!(direction: "expense", category: "production", title: "架空確定候補費",
+      amount_yen: 31_000, certainty: "confirmed", source_kind: "planning_option", source_id: new_option.id)
+    @wedding.planning_cost_links.create!(planning_item: item, budget_item: confirmed_item)
+    replacement = item.planning_options.create!(wedding: @wedding, title: "架空三番目")
+    post select_planning_option_path(replacement)
+    assert_equal "included", confirmed_item.reload.inclusion
+    assert ChangeEvent.for_target(replacement).where(action: "planning_option_cost_changed").exists?
+  end
+
+  test "a task and a budget item can be created from a planning item and linked immediately" do
+    item = @wedding.planning_items.create!(title: "架空その場追加", category: "production")
+
+    post tasks_path, params: { planning_item_id: item.id, task: { title: "架空関連タスク", category: "other" } }
+    assert_redirected_to planning_item_path(item)
+    task = @wedding.tasks.order(:id).last
+    assert_equal "架空関連タスク", task.title
+    assert_equal [task.id], item.reload.tasks.pluck(:id)
+
+    post budget_items_path, params: { planning_item_id: item.id, budget_item: { direction: "expense", category: "production", title: "架空関連費用", amount_yen: 12_000 } }
+    assert_redirected_to planning_item_path(item)
+    budget = @wedding.budget_items.order(:id).last
+    assert_equal "架空関連費用", budget.title
+    assert_equal [budget.id], item.reload.budget_items.pluck(:id)
   end
 
   test "guest manual attendance and automatic budget changes create attributable history" do

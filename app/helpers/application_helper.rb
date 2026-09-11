@@ -126,7 +126,7 @@ module ApplicationHelper
 
   def change_event_icon(event)
     case event.target_type
-    when "Guest", "Household", "SeatingTable", "GiftSet" then :guests
+    when "Guest", "Household", "SeatingTable", "GiftSet", "GiftAssignment", "GuestGiftAssignment" then :guests
     when "Task" then :tasks
     when "Document" then :documents
     when "BudgetItem", "MoneyMovement" then :money

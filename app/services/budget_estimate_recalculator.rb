@@ -28,6 +28,18 @@ class BudgetEstimateRecalculator
         item = budget_items[assignment.id]
         update_amount!(item, assignment.total_price_yen) if item
       end
+
+      guest_assignments = GuestGiftAssignment.where(wedding_id: wedding_id, gift_set_id: gift_set_id)
+        .includes(gift_set: :gift_set_items)
+      guest_assignment_ids = guest_assignments.select(:id)
+      guest_budget_items = Wedding.find(wedding_id).budget_items
+        .where(certainty: "estimate", source_kind: "guest_gift_assignment", source_id: guest_assignment_ids)
+        .index_by(&:source_id)
+
+      guest_assignments.find_each do |assignment|
+        item = guest_budget_items[assignment.id]
+        update_amount!(item, assignment.total_price_yen) if item
+      end
     end
 
     private

@@ -17,6 +17,7 @@ class Wedding < ApplicationRecord
   has_many :money_movements, dependent: :destroy
   has_many :gift_sets, dependent: :destroy
   has_many :gift_assignments, dependent: :destroy
+  has_many :guest_gift_assignments, dependent: :destroy
   has_many :planning_items, dependent: :destroy
   has_many :planning_options, dependent: :destroy
   has_many :music_details, dependent: :destroy

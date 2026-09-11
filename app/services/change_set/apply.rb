@@ -108,7 +108,7 @@ class ChangeSet
       key = attrs["_key"]
       attrs = resolve_references(operation.entity_type, attrs.except("_key"))
       record = case operation.entity_type
-      when "Task", "Guest", "Household", "PlanningItem", "PlanningOption", "GiftSet", "GiftAssignment", "BudgetItem"
+      when "Task", "Guest", "Household", "PlanningItem", "PlanningOption", "GiftSet", "GiftAssignment", "GuestGiftAssignment", "BudgetItem"
         @wedding.public_send(klass.model_name.collection).new(attrs)
       when "MusicDetail"
         option = @wedding.planning_options.find(attrs.delete("planning_option_id"))
@@ -117,7 +117,11 @@ class ChangeSet
         raise InvalidOperation, "作成対象が不正です"
       end
       record.save!
-      budget_item = GiftAssignmentBudgetItemSync.call!(record) if record.is_a?(GiftAssignment)
+      budget_item = if record.is_a?(GiftAssignment)
+        GiftAssignmentBudgetItemSync.call!(record)
+      elsif record.is_a?(GuestGiftAssignment)
+        GuestGiftAssignmentBudgetItemSync.call!(record)
+      end
       @created[operation.operation_key] = record
       @created[key.to_s] = record if key.present?
       record_change_event!(record, {}, attrs)
@@ -175,7 +179,7 @@ class ChangeSet
     def resolve_references(_entity_type, attrs)
       attrs = attrs.stringify_keys
       mappings = {
-        "household_key" => "household_id", "seating_table_key" => "seating_table_id", "planning_item_key" => "planning_item_id",
+        "household_key" => "household_id", "guest_key" => "guest_id", "seating_table_key" => "seating_table_id", "planning_item_key" => "planning_item_id",
         "planning_option_key" => "planning_option_id", "gift_set_key" => "gift_set_id", "budget_item_key" => "budget_item_id",
         "task_key" => "task_id", "target_key" => "target_id"
       }

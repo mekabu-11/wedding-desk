@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_08_000010) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_12_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -238,6 +238,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_08_000010) do
     t.bigint "wedding_id", null: false
     t.index ["wedding_id", "name"], name: "index_gift_sets_on_wedding_id_and_name", unique: true
     t.index ["wedding_id"], name: "index_gift_sets_on_wedding_id"
+  end
+
+  create_table "guest_gift_assignments", force: :cascade do |t|
+    t.bigint "budget_item_id"
+    t.datetime "created_at", null: false
+    t.bigint "gift_set_id", null: false
+    t.bigint "guest_id", null: false
+    t.boolean "included", default: true, null: false
+    t.integer "lock_version", default: 0, null: false
+    t.text "notes"
+    t.integer "quantity", default: 1, null: false
+    t.datetime "updated_at", null: false
+    t.bigint "wedding_id", null: false
+    t.index ["budget_item_id"], name: "index_guest_gift_assignments_on_budget_item_id", unique: true, where: "(budget_item_id IS NOT NULL)"
+    t.index ["gift_set_id"], name: "index_guest_gift_assignments_on_gift_set_id"
+    t.index ["guest_id"], name: "index_guest_gift_assignments_on_guest_id"
+    t.index ["wedding_id", "guest_id"], name: "index_guest_gift_assignments_on_wedding_id_and_guest_id", unique: true
+    t.index ["wedding_id"], name: "index_guest_gift_assignments_on_wedding_id"
+    t.check_constraint "quantity > 0", name: "guest_gift_assignments_quantity_positive"
   end
 
   create_table "guests", force: :cascade do |t|
@@ -690,6 +709,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_08_000010) do
   add_foreign_key "gift_assignments", "weddings"
   add_foreign_key "gift_set_items", "gift_sets"
   add_foreign_key "gift_sets", "weddings"
+  add_foreign_key "guest_gift_assignments", "budget_items"
+  add_foreign_key "guest_gift_assignments", "gift_sets"
+  add_foreign_key "guest_gift_assignments", "guests"
+  add_foreign_key "guest_gift_assignments", "weddings"
   add_foreign_key "guests", "households"
   add_foreign_key "guests", "seating_tables"
   add_foreign_key "guests", "weddings"
