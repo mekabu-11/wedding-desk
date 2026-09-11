@@ -13,6 +13,7 @@ class Wedding < ApplicationRecord
   has_many :cash_gift_rules, dependent: :destroy
   has_many :households, dependent: :destroy
   has_many :guests, dependent: :destroy
+  has_many :meal_sets, dependent: :destroy
   has_many :budget_items, dependent: :destroy
   has_many :money_movements, dependent: :destroy
   has_many :gift_sets, dependent: :destroy

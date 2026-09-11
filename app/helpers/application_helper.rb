@@ -82,6 +82,19 @@ module ApplicationHelper
     BudgetItem::CATEGORY_LABELS.fetch(category.to_s, category.presence || "未設定")
   end
 
+  def seating_layout_position(table, index, total)
+    return [table.position_x, table.position_y] if table.positioned?
+
+    seating_layout_default_position(index, total)
+  end
+
+  def seating_layout_default_position(index, total)
+
+    columns = [total, 4].min
+    rows = (total.to_f / columns).ceil
+    [(index % columns + 0.5) * 100 / columns, (index / columns + 0.5) * 100 / rows].map { |value| value.round }
+  end
+
   def ui_icon(name, size: 20, label: nil, class_name: "ui-icon")
     paths = ICON_PATHS.fetch(name.to_sym, ICON_PATHS.fetch(:planning))
     attributes = {

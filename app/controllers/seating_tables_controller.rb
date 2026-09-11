@@ -21,6 +21,29 @@ class SeatingTablesController < ApplicationController
 
   def edit; end
 
+  def layout
+    @seating_tables = current_wedding.seating_tables.includes(:guests).order(:id)
+  end
+
+  def update_layout
+    positions = params.permit(positions: {}).fetch(:positions, {})
+    tables = current_wedding.seating_tables.where(id: positions.keys).index_by { |table| table.id.to_s }
+    return redirect_to layout_seating_tables_path, alert: "卓の配置を確認できませんでした。", status: :see_other if tables.keys.sort != positions.keys.sort
+
+    SeatingTable.transaction do
+      tables.each do |id, table|
+        values = positions.fetch(id).permit(:x, :y)
+        before = change_snapshot(table, :position_x, :position_y)
+        table.update!(position_x: values[:x], position_y: values[:y])
+        after = change_snapshot(table, :position_x, :position_y)
+        record_change!(table, "seating_table_position_updated", before: before, after: after) if before != after
+      end
+    end
+    redirect_to layout_seating_tables_path, notice: "卓の配置を保存しました。", status: :see_other
+  rescue ActiveRecord::RecordInvalid, ActiveRecord::StaleObjectError
+    redirect_to layout_seating_tables_path, alert: "卓の配置を保存できませんでした。最新の画面でやり直してください。", status: :see_other
+  end
+
   def update
     before = change_snapshot(@seating_table, :label, :capacity)
     saved = ActiveRecord::Base.transaction do
@@ -54,6 +77,6 @@ class SeatingTablesController < ApplicationController
   end
 
   def table_params
-    params.require(:seating_table).permit(:label, :capacity, :lock_version)
+    params.require(:seating_table).permit(:label, :capacity, :position_x, :position_y, :lock_version)
   end
 end

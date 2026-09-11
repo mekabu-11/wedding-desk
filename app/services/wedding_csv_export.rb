@@ -5,8 +5,9 @@ class WeddingCsvExport
   TABLES = {
     tasks: %w[id title description status assignee category starts_on due_on origin source_key],
     households: %w[id code name notes archived cash_gift_rule_id],
-    guests: %w[id name side relationship gender age_group attendance invitation_status household_id seating_table_id roles allergies notes],
-    seating_tables: %w[id label capacity],
+    guests: %w[id name side relationship gender age_group attendance invitation_status household_id seating_table_id meal_set_id roles allergies notes],
+    seating_tables: %w[id label capacity position_x position_y],
+    meal_sets: %w[id name target_age_group unit_price_yen default_for_target notes],
     gift_sets: %w[id name notes],
     gift_set_items: %w[id gift_set_id kind name unit_price_yen tax_basis tax_rate rounding],
     gift_assignments: %w[id household_id gift_set_id quantity included budget_item_id notes],
@@ -47,8 +48,9 @@ class WeddingCsvExport
     {
       tasks: @wedding.tasks.order(:id).map { |r| values(r, %i[id title description status assignee category starts_on due_on origin source_key]) },
       households: @wedding.households.order(:id).map { |r| values(r, %i[id code name notes archived cash_gift_rule_id]) },
-      guests: @wedding.guests.order(:id).map { |r| values(r, %i[id name side relationship gender age_group attendance invitation_status household_id seating_table_id roles allergies notes]) },
-      seating_tables: @wedding.seating_tables.order(:id).map { |r| values(r, %i[id label capacity]) },
+      guests: @wedding.guests.order(:id).map { |r| values(r, %i[id name side relationship gender age_group attendance invitation_status household_id seating_table_id meal_set_id roles allergies notes]) },
+      seating_tables: @wedding.seating_tables.order(:id).map { |r| values(r, %i[id label capacity position_x position_y]) },
+      meal_sets: @wedding.meal_sets.order(:id).map { |r| values(r, %i[id name target_age_group unit_price_yen default_for_target notes]) },
       gift_sets: gift_sets.map { |r| values(r, %i[id name notes]) },
       gift_set_items: gift_sets.flat_map { |set| set.gift_set_items.order(:id).map { |r| values(r, %i[id gift_set_id kind name unit_price_yen tax_basis tax_rate rounding]) } },
       gift_assignments: @wedding.gift_assignments.order(:id).map { |r| values(r, %i[id household_id gift_set_id quantity included budget_item_id notes]) },

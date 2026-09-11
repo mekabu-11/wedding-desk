@@ -9,11 +9,11 @@ class GuestBudgetTest < ActionDispatch::IntegrationTest
   end
 
   test "guest tabs and manual guest CRUD stay within the current wedding" do
-    %w[individuals households seating gifts].each do |tab|
+    %w[individuals households seating gifts meals].each do |tab|
       get guests_path(tab: tab)
       assert_response :success
     end
-    [new_guest_path, new_household_path, new_seating_table_path, new_cash_gift_rule_path,
+    [new_guest_path, new_household_path, new_seating_table_path, new_cash_gift_rule_path, new_meal_set_path,
       new_gift_set_path, new_gift_assignment_path, new_guest_gift_assignment_path, new_budget_item_path].each do |path|
       get path
       assert_response :success
@@ -349,5 +349,114 @@ class GuestBudgetTest < ActionDispatch::IntegrationTest
     budget.update!(certainty: "confirmed", amount_yen: 5_000)
     item.update!(unit_price_yen: 6_000)
     assert_equal 5_000, budget.reload.amount_yen
+  end
+
+  test "cash gift fallback applies to attending guests without a household" do
+    rule = @wedding.cash_gift_rules.create!(label: "架空友人", default_amount_yen: 30_000,
+      fallback_attribute: "relationship", fallback_value: "友人")
+    guest = @wedding.guests.create!(name: "架空友人", relationship: "友人", attendance: "attending")
+
+    item = @wedding.budget_items.find_by!(source_kind: "cash_gift_guest", source_id: guest.id)
+    assert_equal 30_000, item.amount_yen
+    assert_equal "属性別ご祝儀", BudgetItem::SOURCE_KINDS.fetch(item.source_kind)
+
+    guest.update!(relationship: "親族")
+    assert_equal "excluded", item.reload.inclusion
+    assert rule.reload.persisted?
+  end
+
+  test "cash gift fallback preserves confirmed or received guest amounts" do
+    rule = @wedding.cash_gift_rules.create!(label: "架空保護対象", default_amount_yen: 30_000,
+      fallback_attribute: "side", fallback_value: "bride")
+    confirmed_guest = @wedding.guests.create!(name: "架空確定ご祝儀", side: "bride", attendance: "attending")
+    received_guest = @wedding.guests.create!(name: "架空受取済みご祝儀", side: "bride", attendance: "attending")
+    confirmed = @wedding.budget_items.find_by!(source_kind: "cash_gift_guest", source_id: confirmed_guest.id)
+    received = @wedding.budget_items.find_by!(source_kind: "cash_gift_guest", source_id: received_guest.id)
+    confirmed.update!(certainty: "confirmed", amount_yen: 35_000)
+    received.money_movements.create!(wedding: @wedding, kind: "receipt", amount_yen: 30_000, occurred_on: Date.current)
+
+    confirmed_guest.update!(side: "groom")
+    received_guest.update!(side: "groom")
+
+    assert_equal [35_000, "confirmed", "included"], confirmed.reload.attributes.values_at("amount_yen", "certainty", "inclusion")
+    assert_equal [30_000, "estimate", "included"], received.reload.attributes.values_at("amount_yen", "certainty", "inclusion")
+    assert_equal 1, received.money_movements.count
+  end
+
+  test "deleting an empty household reapplies fallback to guests that become unassigned" do
+    rule = @wedding.cash_gift_rules.create!(label: "架空世帯解除後", default_amount_yen: 25_000,
+      fallback_attribute: "side", fallback_value: "bride")
+    household = @wedding.households.create!(code: "H-FALLBACK-DELETE", name: "架空解除世帯")
+    guest = household.guests.create!(name: "架空解除後ゲスト", side: "bride", attendance: "attending")
+
+    household.destroy!
+
+    item = @wedding.budget_items.find_by!(source_kind: "cash_gift_guest", source_id: guest.id)
+    assert_equal 25_000, item.amount_yen
+    assert_equal "included", item.inclusion
+  end
+
+  test "meal sets calculate one expense per set and individual overrides win" do
+    adult = @wedding.meal_sets.create!(name: "架空大人料理", target_age_group: "adult", unit_price_yen: 12_000, default_for_target: true)
+    child = @wedding.meal_sets.create!(name: "架空子ども料理", target_age_group: "child", unit_price_yen: 7_000, default_for_target: true)
+    adult_guest = @wedding.guests.create!(name: "架空大人", age_group: "adult", attendance: "attending")
+    child_guest = @wedding.guests.create!(name: "架空子ども", age_group: "child", attendance: "attending")
+
+    adult_item = @wedding.budget_items.find_by!(source_kind: "meal_set", source_id: adult.id)
+    child_item = @wedding.budget_items.find_by!(source_kind: "meal_set", source_id: child.id)
+    assert_equal 12_000, adult_item.amount_yen
+    assert_equal 7_000, child_item.amount_yen
+
+    adult_guest.update!(meal_set: child)
+    assert_equal 0, adult_item.reload.amount_yen
+    assert_equal "excluded", adult_item.inclusion
+    assert_equal 14_000, child_item.reload.amount_yen
+
+    adult_guest.update!(meal_set: nil)
+    adult.update!(unit_price_yen: 13_000)
+    assert_equal 13_000, adult_item.reload.amount_yen
+  end
+
+  test "deleting a meal set excludes only unpaid estimates and preserves confirmed history" do
+    estimate_set = @wedding.meal_sets.create!(name: "架空削除概算料理", target_age_group: "adult", unit_price_yen: 10_000, default_for_target: true)
+    confirmed_set = @wedding.meal_sets.create!(name: "架空削除確定料理", target_age_group: "child", unit_price_yen: 8_000, default_for_target: true)
+    @wedding.guests.create!(name: "架空削除料理ゲスト", age_group: "adult", attendance: "attending")
+    @wedding.guests.create!(name: "架空確定料理ゲスト", age_group: "child", attendance: "attending")
+    estimate = @wedding.budget_items.find_by!(source_kind: "meal_set", source_id: estimate_set.id)
+    confirmed = @wedding.budget_items.find_by!(source_kind: "meal_set", source_id: confirmed_set.id)
+    confirmed.update!(certainty: "confirmed", amount_yen: 12_000)
+    confirmed.money_movements.create!(wedding: @wedding, kind: "payment", amount_yen: 5_000, occurred_on: Date.current)
+
+    estimate_set.destroy!
+    confirmed_set.destroy!
+
+    assert_equal ["manual", nil, "excluded"], estimate.reload.attributes.values_at("source_kind", "source_id", "inclusion")
+    assert_equal ["manual", nil, "included", 12_000], confirmed.reload.attributes.values_at("source_kind", "source_id", "inclusion", "amount_yen")
+    assert ChangeEvent.for_target(confirmed).where(action: "meal_source_detached").exists?
+  end
+
+  test "seating layout saves positions within the current wedding" do
+    first = @wedding.seating_tables.create!(label: "レイアウトA")
+    second = @wedding.seating_tables.create!(label: "レイアウトB")
+    get layout_seating_tables_path
+    assert_response :success
+    assert_select "[data-seating-layout]", count: 1
+    assert_select "[data-table-id='#{first.id}']", count: 1
+
+    patch layout_seating_tables_path, params: { positions: {
+      first.id.to_s => { x: 22, y: 34 }, second.id.to_s => { x: 78, y: 66 }
+    } }
+    assert_redirected_to layout_seating_tables_path
+    assert_equal [22, 34], first.reload.attributes.values_at("position_x", "position_y")
+    assert_equal [78, 66], second.reload.attributes.values_at("position_x", "position_y")
+    position_event = ChangeEvent.for_target(first).find_by(action: "seating_table_position_updated")
+    assert position_event
+    assert_equal "卓の位置を更新", position_event.action_label
+
+    other = create_wedding
+    foreign = other.seating_tables.create!(label: "別結婚式")
+    patch layout_seating_tables_path, params: { positions: { foreign.id.to_s => { x: 10, y: 10 } } }
+    assert_redirected_to layout_seating_tables_path
+    assert_equal [nil, nil], foreign.reload.attributes.values_at("position_x", "position_y")
   end
 end

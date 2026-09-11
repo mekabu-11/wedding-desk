@@ -8,6 +8,8 @@ class Household < ApplicationRecord
 
   before_validation :assign_code, on: :create
   before_destroy :prevent_destroy_with_cash_gift_budget_item
+  before_destroy :remember_guest_ids, prepend: true
+  after_destroy :recalculate_guest_cash_gifts
   validates :code, presence: true, length: { maximum: 50 }, uniqueness: { scope: :wedding_id }
   validates :name, presence: true, length: { maximum: 150 }
   validate :cash_gift_rule_belongs_to_wedding
@@ -33,6 +35,16 @@ class Household < ApplicationRecord
   end
 
   private
+
+  def remember_guest_ids
+    @guest_ids_before_destroy = guests.pluck(:id)
+  end
+
+  def recalculate_guest_cash_gifts
+    Guest.where(wedding_id: wedding_id, id: @guest_ids_before_destroy).find_each do |guest|
+      CashGiftBudgetItemSync.for_guest_change!(guest)
+    end
+  end
 
   def assign_code
     self.code = "household-#{SecureRandom.hex(4)}" if code.blank?

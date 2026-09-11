@@ -25,8 +25,12 @@ Rails.application.routes.draw do
   resources :task_imports, only: %i[new create show update]
   resources :spreadsheet_imports, only: %i[new create show update]
   resources :guests, only: %i[index new create edit update destroy]
+  resources :meal_sets, only: %i[new create edit update destroy]
   resources :households, only: %i[new create edit update destroy]
-  resources :seating_tables, only: %i[new create edit update destroy]
+  resources :seating_tables, only: %i[new create edit update destroy] do
+    get :layout, on: :collection
+    patch :layout, on: :collection, action: :update_layout
+  end
   resources :cash_gift_rules, only: %i[new create edit update destroy]
   resources :gift_sets, only: %i[new create edit update destroy]
   resources :gift_assignments, only: %i[new create edit update destroy]

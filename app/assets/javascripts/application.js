@@ -253,4 +253,76 @@
   }
 
   setupGanttInteractions();
+
+  function setupCashGiftFallbackFields() {
+    var attribute = document.querySelector("[data-cash-gift-fallback-attribute]");
+    var container = document.querySelector("[data-cash-gift-fallback-value]");
+    if (!attribute || !container) return;
+    var fields = Array.prototype.slice.call(container.querySelectorAll("[data-fallback-options]"));
+    function sync() {
+      var selected = attribute.value;
+      fields.forEach(function (field) {
+        var active = field.dataset.fallbackOptions === selected;
+        field.hidden = !active;
+        field.disabled = !active;
+      });
+      container.hidden = !["side", "relationship", "age_group"].includes(selected);
+    }
+    attribute.addEventListener("change", sync);
+    sync();
+  }
+
+  function setupSeatingLayout() {
+    var board = document.querySelector("[data-seating-layout]");
+    if (!board) return;
+    var tables = Array.prototype.slice.call(board.querySelectorAll("[data-seating-table]"));
+    var active = null;
+    var clamp = function (value) { return Math.max(3, Math.min(97, Math.round(value))); };
+    var update = function (table, x, y) {
+      var nextX = clamp(x);
+      var nextY = clamp(y);
+      table.dataset.positionX = String(nextX);
+      table.dataset.positionY = String(nextY);
+      table.style.left = nextX + "%";
+      table.style.top = nextY + "%";
+      var xField = table.querySelector("[data-seating-position-x]");
+      var yField = table.querySelector("[data-seating-position-y]");
+      if (xField) xField.value = String(nextX);
+      if (yField) yField.value = String(nextY);
+    };
+    tables.forEach(function (table) {
+      table.addEventListener("pointerdown", function (event) {
+        if (event.target.closest("a,button,input,select,textarea")) return;
+        var rect = board.getBoundingClientRect();
+        active = { table: table, offsetX: event.clientX - (rect.left + parseFloat(table.dataset.positionX) / 100 * rect.width), offsetY: event.clientY - (rect.top + parseFloat(table.dataset.positionY) / 100 * rect.height) };
+        table.classList.add("dragging");
+        table.setPointerCapture(event.pointerId);
+        event.preventDefault();
+      });
+      table.addEventListener("pointermove", function (event) {
+        if (!active || active.table !== table) return;
+        var rect = board.getBoundingClientRect();
+        update(table, (event.clientX - rect.left - active.offsetX) / rect.width * 100, (event.clientY - rect.top - active.offsetY) / rect.height * 100);
+      });
+      table.addEventListener("pointerup", function () { if (active && active.table === table) { table.classList.remove("dragging"); active = null; } });
+      table.addEventListener("pointercancel", function () { if (active && active.table === table) { table.classList.remove("dragging"); active = null; } });
+      table.addEventListener("keydown", function (event) {
+        var step = event.shiftKey ? 5 : 2;
+        var x = parseFloat(table.dataset.positionX);
+        var y = parseFloat(table.dataset.positionY);
+        if (event.key === "ArrowLeft") x -= step;
+        else if (event.key === "ArrowRight") x += step;
+        else if (event.key === "ArrowUp") y -= step;
+        else if (event.key === "ArrowDown") y += step;
+        else return;
+        event.preventDefault();
+        update(table, x, y);
+      });
+    });
+    var reset = document.querySelector("[data-seating-layout-reset]");
+    if (reset) reset.addEventListener("click", function () { tables.forEach(function (table) { update(table, table.dataset.defaultX, table.dataset.defaultY); }); });
+  }
+
+  setupCashGiftFallbackFields();
+  setupSeatingLayout();
 }());

@@ -9,6 +9,7 @@ class Guest < ApplicationRecord
   belongs_to :wedding
   belongs_to :household, optional: true
   belongs_to :seating_table, optional: true
+  belongs_to :meal_set, optional: true
   has_one :guest_gift_assignment, dependent: :restrict_with_error
 
   encrypts :name, :relationship, :roles, :allergies, :notes
@@ -30,6 +31,10 @@ class Guest < ApplicationRecord
   scope :ordered, -> { order(:id) }
   scope :attending, -> { where(attendance: "attending") }
 
+  def effective_meal_set
+    meal_set || MealSet.default_for(wedding, age_group)
+  end
+
   private
 
   def inherit_wedding
@@ -49,10 +54,11 @@ class Guest < ApplicationRecord
   def related_records_belong_to_wedding
     errors.add(:household, "結婚式が一致しません") if household && household.wedding_id != wedding_id
     errors.add(:seating_table, "結婚式が一致しません") if seating_table && seating_table.wedding_id != wedding_id
+    errors.add(:meal_set, "結婚式が一致しません") if meal_set && meal_set.wedding_id != wedding_id
   end
 
   def recalculate_budget_estimates_after_change
-    relevant = previous_changes.slice("attendance", "age_group", "household_id", "seating_table_id")
+    relevant = previous_changes.slice("attendance", "age_group", "household_id", "seating_table_id", "meal_set_id", "side", "relationship")
     if destroyed? || relevant.any?
       wedding = Wedding.find_by(id: wedding_id)
       ChangeEvent.record!(wedding: wedding, actor: change_event_actor, target: self, action: destroyed? ? "guest_deleted" : "guest_attendance_changed",
@@ -61,5 +67,7 @@ class Guest < ApplicationRecord
     return unless destroyed? || relevant.any?
 
     BudgetEstimateRecalculator.for_guest_change!(wedding_id)
+    CashGiftBudgetItemSync.for_guest_change!(self)
+    MealBudgetItemSync.call!(wedding_id)
   end
 end

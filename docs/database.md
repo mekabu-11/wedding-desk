@@ -16,11 +16,17 @@ xlsxはZIP/XMLとして読み取り、数式・外部リンク・マクロを実
 
 ゲスト領域はすべてWeddingに所属し、`Guest`（個人）を任意の`Household`（世帯）と`SeatingTable`（卓）へ割り当てる。`attendance`は`attending/declined/pending/unanswered`で、招待状態とは別に保存する。`CashGiftRule`は初期提案額だけを持ち、世帯が明示的に登録した時に、世帯ごとに1件の`BudgetItem`（`source_kind=cash_gift`）を作る。
 
+`SeatingTable`の`position_x`／`position_y`は会場内の卓位置を0〜100の割合で保存する任意値で、席順やゲストの卓割当とは独立している。通常の席次一覧は従来どおり使え、必要な場合だけ詳細画面でドラッグ・タッチ・キーボード編集を行う。
+
 引き出物は`GiftSet`と`GiftSetItem`で設定し、`GiftAssignment`の世帯・セット・数量を手動で確定する。割当を保存すると割当ごとに1件の`BudgetItem`（`source_kind=gift_assignment`）を作る。世帯人数を掛けず、設定価格の変更で確定済み明細を上書きしない。
 
 `GiftSetItem`の単価は税込・税区分不明なら最終価格として扱い、税抜の場合だけ税率と丸め（切捨て・四捨五入・切上げ）を使ってセット合計へ反映する。空の内訳行は保存対象から除外する。
 
 `BudgetItem`は収入／支出、金額、概算／確定、集計対象を1つの正本として保存する。業者・支払先や4種類の金額欄は持たない。`MoneyMovement`はBudgetItemにのみ所属し、支払い・受取・返金・返戻の履歴から未払い・一部・完了・超過を導出する。履歴がある明細は削除できず、同じWedding内の複合インデックス、`lock_version`、同一Weddingの関連検証を備える。お車代の元関連は`travel_guest`／`travel_household`へ分け、曖昧なIDを受け付けない。
+
+`CashGiftRule`には任意の`fallback_attribute`／`fallback_value`を設定できる。世帯が未設定で出席中の`Guest`へ、続柄・側・年齢区分・その他すべての優先順で1件の`BudgetItem`（`source_kind=cash_gift_guest`）を自動作成する。世帯に明示した`source_kind=cash_gift`を優先し、属性変更や区分変更では未入出金かつ概算の明細だけを集計対象へ戻す／除外する。確定済み・入出金履歴ありの明細は残し、`ChangeEvent`へ理由を記録する。
+
+料理は`MealSet`（対象：大人・子ども・全員、単価、標準指定）で管理し、`Guest.meal_set_id`が個人上書きを表す。上書きがなければ年齢区分の標準、次に全員標準を使う。出席ゲストが実際に適用されるセットごとに`BudgetItem`（`source_kind=meal_set`）を1件だけ作成し、概算のみ人数・単価を再計算する。セット削除や対象変更で不要になった概算は除外して履歴を残す。
 
 出欠・年齢・世帯・席の変更時は、数量計算かつ概算のBudgetItemだけを対象Wedding内で再計算する。確定明細は固定し、再計算は対象scopeの`find_each`で行う。ご祝儀区分の金額変更と引き出物内訳の価格・税率・丸め変更も、紐づく概算明細だけを更新し、既存の確定明細と削除済み区分の明細は保持する。
 

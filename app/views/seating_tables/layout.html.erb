@@ -1,0 +1,26 @@
+<%= link_to "← 席次", guests_path(tab: "seating"), class: "back-link" %>
+<header class="page-heading"><div><p class="eyebrow">詳細設定</p><h1>卓の位置を編集</h1><p>卓カードをドラッグして会場内の位置を並べ替えます。卓の中の席順はここでは扱いません。</p></div><%= link_to "卓を追加", new_seating_table_path, class: "button secondary" %></header>
+<% if @seating_tables.empty? %>
+  <section class="surface empty-state"><h2>卓がありません</h2><p>先に卓を追加すると、会場レイアウトを編集できます。</p><%= link_to "卓を追加", new_seating_table_path, class: "button primary" %></section>
+<% else %>
+  <%= form_with url: layout_seating_tables_path, method: :patch, class: "form-stack", data: { seating_layout_form: true } do %>
+    <section class="surface seating-layout-editor">
+      <div class="section-heading"><div><p class="eyebrow">会場レイアウト</p><h2>卓の配置</h2></div><button type="button" class="button secondary" data-seating-layout-reset>自動配置に戻す</button></div>
+      <p class="micro seating-layout-help">卓を選んで矢印キーでも動かせます。保存するまで変更は確定しません。</p>
+      <div class="seating-layout-board" data-seating-layout role="application" aria-label="卓の配置エリア">
+        <div class="seating-layout-stage" aria-hidden="true"><span>会場前方</span><span>会場後方</span></div>
+        <% @seating_tables.each_with_index do |table, index| %>
+          <% x, y = seating_layout_position(table, index, @seating_tables.size) %>
+          <% default_x, default_y = seating_layout_default_position(index, @seating_tables.size) %>
+          <article class="seating-layout-table" tabindex="0" role="group" aria-label="卓#{table.label}の位置" data-seating-table data-table-id="<%= table.id %>" data-position-x="<%= x %>" data-position-y="<%= y %>" data-default-x="<%= default_x %>" data-default-y="<%= default_y %>" style="left:<%= x %>%;top:<%= y %>%">
+            <div class="seating-layout-table-handle" data-seating-drag-handle><strong>卓 <%= table.label %></strong><span><%= table.guests.size %>人<%= " / 定員#{table.capacity}" if table.capacity %></span></div>
+            <%= link_to "編集", edit_seating_table_path(table), class: "seating-layout-table-link" %>
+            <%= hidden_field_tag "positions[#{table.id}][x]", x, data: { seating_position_x: true } %>
+            <%= hidden_field_tag "positions[#{table.id}][y]", y, data: { seating_position_y: true } %>
+          </article>
+        <% end %>
+      </div>
+      <div class="seating-layout-actions"><%= submit_tag "配置を保存する", class: "button primary" %><%= link_to "変更を破棄", layout_seating_tables_path, class: "button secondary" %></div>
+    </section>
+  <% end %>
+<% end %>

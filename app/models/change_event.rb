@@ -17,6 +17,7 @@ class ChangeEvent < ApplicationRecord
     "GiftSet" => ["引き出物セット", :name],
     "GiftAssignment" => ["引き出物割当", nil],
     "GuestGiftAssignment" => ["個人引き出物割当", nil],
+    "MealSet" => ["食事セット", :name],
     "MusicDetail" => ["BGM情報", nil]
   }.freeze
 
@@ -41,6 +42,7 @@ class ChangeEvent < ApplicationRecord
     "seating_table_created" => "卓を追加",
     "seating_table_updated" => "卓を更新",
     "seating_table_deleted" => "卓を削除",
+    "seating_table_position_updated" => "卓の位置を更新",
     "cash_gift_rule_created" => "ご祝儀区分を追加",
     "cash_gift_rule_updated" => "ご祝儀区分を更新",
     "cash_gift_rule_deleted" => "ご祝儀区分を削除",
@@ -53,6 +55,13 @@ class ChangeEvent < ApplicationRecord
     "guest_gift_assignment_created" => "個人引き出物を割当",
     "guest_gift_assignment_updated" => "個人引き出物割当を更新",
     "guest_gift_assignment_deleted" => "個人引き出物割当を解除",
+    "meal_set_created" => "食事セットを追加",
+    "meal_set_updated" => "食事セットを更新",
+    "meal_set_deleted" => "食事セットを削除",
+    "meal_estimate_excluded" => "食事の概算を除外",
+    "meal_source_detached" => "食事セットとの紐付けを解除",
+    "cash_gift_fallback_applied" => "属性別ご祝儀を適用",
+    "cash_gift_fallback_excluded" => "属性別ご祝儀を除外",
     "planning_item_created" => "検討項目を追加",
     "planning_item_updated" => "検討項目を更新",
     "planning_item_deleted" => "検討項目を削除",
@@ -80,7 +89,8 @@ class ChangeEvent < ApplicationRecord
     "seating_table_id" => "卓",
     "gender" => "性別",
     "invitation_status" => "招待状",
-    "roles" => "役割"
+    "roles" => "役割",
+    "meal_set_id" => "食事セット"
   }.freeze
 
   FIELD_LABELS = {
@@ -97,6 +107,8 @@ class ChangeEvent < ApplicationRecord
     "unit_price_yen" => "単価",
     "quantity" => "数量",
     "capacity" => "定員",
+    "position_x" => "横位置",
+    "position_y" => "縦位置",
     "occurred_on" => "日付",
     "kind" => "種類",
     "starts_on" => "開始日",
@@ -115,7 +127,11 @@ class ChangeEvent < ApplicationRecord
     "preserved_budget_item_ids" => "保持した費用",
     "task_id" => "タスク",
     "task_title" => "タスク",
-    "planning_option_id" => "候補"
+    "planning_option_id" => "候補",
+    "fallback_attribute" => "自動適用属性",
+    "fallback_value" => "適用属性値",
+    "target_age_group" => "適用対象",
+    "default_for_target" => "標準セット"
   }.freeze
 
   encrypts :before, :after, :source

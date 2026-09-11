@@ -48,15 +48,16 @@ PCは左ナビ＋主作業領域。スマホはメニューと共通登録ボタ
 | Membership | user_id, wedding_id, role(owner/editor)。組合せ一意。v1は1人1Wedding、1Wedding最大2人。上限はWeddingロック下で保証 |
 | Task | 既存項目維持。担当は表示名に依存しないperson_a/person_b/both/unknownへ移行。candidateは任意、AI起源にはSourceLinkが必要 |
 | Household | wedding内一意code、名称、祝儀区分、メモ。招待単位として扱う |
-| Guest | household、氏名、side、relationship、gender、adult/child、attendance、table、roles、allergies、notes。複数役割を許容 |
-| SeatingTable | label, optional capacity。使用卓数は出席ゲストが配置された卓の数 |
-| CashGiftRule | label, default_amount_yen。初期値の提案用。確定済み金額を一括上書きしない |
+| Guest | household、氏名、side、relationship、gender、adult/child、attendance、table、meal_set、roles、allergies、notes。複数役割を許容。meal_setは個人上書き |
+| SeatingTable | label, optional capacity, optional position_x/position_y。使用卓数は出席ゲストが配置された卓の数。位置は詳細画面で編集 |
+| CashGiftRule | label, default_amount_yen, optional fallback_attribute/value。世帯未設定の出席ゲストへ属性別に初期提案し、確定済み金額を一括上書きしない |
+| MealSet | name, target_age_group(adult/child/all), unit_price_yen, default_for_target, notes。標準セットと個人上書きの共通定義 |
 | GiftSet / GiftSetItem | セット名、引出物／引菓子／縁起物などの品名・単価・税区分・税率 |
 | GiftAssignment | household_id, gift_set_id, quantity(初期1), included, budget_item_id。割当と予算明細は1対1 |
 | PlanningItem | title, category, notes, position。例: 装花、入場BGM、ケーキ演出 |
 | PlanningOption | planning_item_id, title, description, status(draft/considering/selected/rejected), optional reference_price_yen。1項目の採用候補は最大1件 |
 | MusicDetail | PlanningOptionに任意で1対1。希望曲A/B、selected_track、artist、start_offset_seconds、元表記、scene。BGM固有項目を他分類に強制しない |
-| BudgetItem | direction(income/expense), category, title, amount_yen(nullable), certainty(estimate/confirmed), inclusion(included/excluded), calculation_mode(manual/quantity), quantity_basis, unit_price, manual_quantity, tax_basis, tax_rate, rounding、source_kind、source_id |
+| BudgetItem | direction(income/expense), category, title, amount_yen(nullable), certainty(estimate/confirmed), inclusion(included/excluded), calculation_mode(manual/quantity), quantity_basis, unit_price, manual_quantity, tax_basis, tax_rate, rounding、source_kind、source_id。source_kindにcash_gift_guest／meal_setを含む |
 | MoneyMovement | budget_item_id, occurred_on, kind(payment/receipt/refund/return), amount_yen(正数), note。支払い／受取履歴の正本 |
 | PlanningCostLink | planning_item_id, budget_item_id。組合せ一意。複数対複数。リンク数を掛けて集計しない |
 | TaskPlanningLink | task_id, planning_item_id。作業と検討内容を相互参照 |
@@ -66,7 +67,7 @@ PCは左ナビ＋主作業領域。スマホはメニューと共通登録ボタ
 | ChangeEvent | actor, target, action, encrypted before/after, source。金額・採用案・出欠等の履歴 |
 | ImportBatch / ImportRow | digest、mapping版、元sheet/row、暗号化元情報、行state、対象ID、実行結果、旧source_key対応 |
 
-MoneyMovementはすべてBudgetItemにのみ所属。ご祝儀とお車代を別テーブルでも金額保存する二重管理はしない。BudgetItem.source_kindはmanual/cash_gift/travel_guest/travel_household/gift_assignment。ご祝儀は世帯につき1収入明細、お車代は個人または世帯につき1支出明細。BudgetItemの元関連は変更可能な一般ポリモーフィック入力にせず、許可型・同一Wedding・一意制約を保証する。
+MoneyMovementはすべてBudgetItemにのみ所属。ご祝儀とお車代を別テーブルでも金額保存する二重管理はしない。BudgetItem.source_kindはmanual/planning_option/cash_gift/cash_gift_guest/travel_guest/travel_household/gift_assignment/guest_gift_assignment/meal_set。ご祝儀は世帯につき1収入明細、世帯未設定ゲストは属性別フォールバックで個人につき1収入明細、お車代は個人または世帯につき1支出明細。BudgetItemの元関連は変更可能な一般ポリモーフィック入力にせず、許可型・同一Wedding・一意制約を保証する。
 
 世帯のご祝儀・お車代やギフト割当を編集する画面は、裏側で対応BudgetItemを編集する。ゲスト画面にもお金画面にも同じ値が出る。
 
@@ -130,7 +131,7 @@ MoneyMovementはすべてBudgetItemにのみ所属。ご祝儀とお車代を別
 - ゲスト出欠はinvited/planned等と混同しない。attendanceはattending/declined/pending/unanswered、招待状態は別任意項目。
 - householdは手動登録時未設定可、元Excelの世帯参照が壊れていたら取込エラー。
 - 検索はまずWedding内・上限2000件の復号後検索とし、氏名を平文複製した検索索引を作らない。絞り込み後、検索してからページング。上限超過は明示し、切り捨てない。
-- 配席は卓ごとのメンバー一覧と移動操作。席の幾何配置・座席図エディタはv1対象外。
+- 配席は卓ごとのメンバー一覧と移動操作。卓の幾何配置は必要な利用者向けの詳細設定で編集できる。個別の座席順・座席図の印刷は対象外。
 - BGMはPlanningItemをシーン順に表示。候補内に2人の希望、決定曲、再生開始位置を保持。実際の音楽再生・配信はしない。
 - 一般の検討事項は候補1件でも登録できる。候補比較を必須にしない。
 

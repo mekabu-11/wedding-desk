@@ -4,6 +4,7 @@ class BudgetEstimateRecalculator
       wedding = Wedding.find_by(id: wedding_id)
       return unless wedding
 
+      MealBudgetItemSync.call!(wedding_id)
       quantity_estimates(wedding).find_each do |item|
         update_amount!(item, item.calculated_amount)
       end
@@ -14,6 +15,11 @@ class BudgetEstimateRecalculator
         .where(certainty: "estimate", source_kind: "cash_gift")
         .where(source_id: rule.wedding.households.where(cash_gift_rule_id: rule.id).select(:id))
       scope.find_each { |item| update_amount!(item, rule.default_amount_yen) }
+      CashGiftBudgetItemSync.for_rule_change!(rule)
+    end
+
+    def for_meal_set_change!(meal_set)
+      MealBudgetItemSync.call!(meal_set.wedding_id)
     end
 
     def for_gift_set_change!(gift_set_id, wedding_id)
@@ -48,7 +54,7 @@ class BudgetEstimateRecalculator
       wedding.budget_items.where(
         certainty: "estimate",
         calculation_mode: "quantity",
-        quantity_basis: %w[attending_guests attending_adults attending_children attending_households seating_tables]
+        quantity_basis: %w[attending_guests attending_adults attending_children attending_households seating_tables meal_set]
       )
     end
 

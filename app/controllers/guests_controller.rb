@@ -2,7 +2,7 @@ class GuestsController < ApplicationController
   before_action :set_guest, only: %i[edit update destroy]
 
   def index
-    @tab = params[:tab].presence_in(%w[individuals households seating gifts]) || "individuals"
+    @tab = params[:tab].presence_in(%w[individuals households seating gifts meals]) || "individuals"
     @search_query = params[:q].to_s.strip[0, 100]
     @attendance = params[:attendance].presence_in(Guest::ATTENDANCES.keys)
     @side = params[:side].presence_in(Guest::SIDES.keys)
@@ -15,6 +15,7 @@ class GuestsController < ApplicationController
     when "households" then load_households
     when "seating" then load_seating
     when "gifts" then load_gifts
+    when "meals" then load_meals
     end
   end
 
@@ -64,7 +65,7 @@ class GuestsController < ApplicationController
   end
 
   def guest_params
-    params.require(:guest).permit(:name, :household_id, :seating_table_id, :side, :relationship,
+    params.require(:guest).permit(:name, :household_id, :seating_table_id, :meal_set_id, :side, :relationship,
       :gender, :age_group, :attendance, :invitation_status, :allergies, :notes, :lock_version,
       roles: [])
   end
@@ -72,6 +73,7 @@ class GuestsController < ApplicationController
   def load_form_options
     @households = current_wedding.households.active.order(:id)
     @seating_tables = current_wedding.seating_tables.order(:id)
+    @meal_sets = current_wedding.meal_sets.ordered
   end
 
   def load_individuals
@@ -121,6 +123,13 @@ class GuestsController < ApplicationController
     @total_count = current_wedding.gift_assignments.count
     @gift_assignments = current_wedding.gift_assignments.includes(:household, :gift_set, :budget_item).order(:id).offset((@page - 1) * 30).limit(30)
     @guest_gift_assignments = current_wedding.guest_gift_assignments.includes(:guest, :gift_set, :budget_item).order(:id).limit(100)
+  end
+
+  def load_meals
+    @meal_sets = current_wedding.meal_sets.ordered
+    @meal_budget_items = current_wedding.budget_items.where(source_kind: "meal_set", source_id: @meal_sets.map(&:id)).index_by(&:source_id)
+    @meal_guest_overrides = current_wedding.guests.includes(:meal_set).where.not(meal_set_id: nil).ordered
+    @total_count = @meal_sets.size
   end
 
   def searchable_guest?(guest, query)

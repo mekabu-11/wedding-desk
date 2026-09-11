@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_12_000001) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_12_000002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -110,10 +110,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_12_000001) do
   create_table "cash_gift_rules", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.bigint "default_amount_yen", null: false
+    t.string "fallback_attribute"
+    t.string "fallback_value"
     t.string "label", null: false
     t.integer "lock_version", default: 0, null: false
     t.datetime "updated_at", null: false
     t.bigint "wedding_id", null: false
+    t.index ["wedding_id", "fallback_attribute", "fallback_value"], name: "index_cash_gift_rules_on_fallback_match"
     t.index ["wedding_id", "label"], name: "index_cash_gift_rules_on_wedding_id_and_label", unique: true
     t.index ["wedding_id"], name: "index_cash_gift_rules_on_wedding_id"
     t.check_constraint "default_amount_yen >= 0", name: "cash_gift_rules_amount_non_negative"
@@ -155,8 +158,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_12_000001) do
     t.datetime "updated_at", null: false
     t.index ["change_set_id", "operation_key"], name: "index_change_operations_on_change_set_id_and_operation_key", unique: true
     t.index ["change_set_id"], name: "index_change_operations_on_change_set_id"
-    t.check_constraint "action::text = ANY (ARRAY['create'::character varying::text, 'update'::character varying::text, 'link'::character varying::text])", name: "change_operations_valid_action"
-    t.check_constraint "state::text = ANY (ARRAY['pending'::character varying::text, 'applied'::character varying::text, 'failed'::character varying::text])", name: "change_operations_valid_state"
+    t.check_constraint "action::text = ANY (ARRAY['create'::character varying, 'update'::character varying, 'link'::character varying]::text[])", name: "change_operations_valid_action"
+    t.check_constraint "state::text = ANY (ARRAY['pending'::character varying, 'applied'::character varying, 'failed'::character varying]::text[])", name: "change_operations_valid_state"
   end
 
   create_table "change_sets", force: :cascade do |t|
@@ -173,7 +176,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_12_000001) do
     t.index ["document_id"], name: "index_change_sets_on_document_id"
     t.index ["wedding_id", "operation_key"], name: "index_change_sets_on_wedding_id_and_operation_key", unique: true
     t.index ["wedding_id"], name: "index_change_sets_on_wedding_id"
-    t.check_constraint "state::text = ANY (ARRAY['pending'::character varying::text, 'applied'::character varying::text, 'failed'::character varying::text])", name: "change_sets_valid_state"
+    t.check_constraint "state::text = ANY (ARRAY['pending'::character varying, 'applied'::character varying, 'failed'::character varying]::text[])", name: "change_sets_valid_state"
   end
 
   create_table "documents", force: :cascade do |t|
@@ -224,7 +227,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_12_000001) do
     t.bigint "unit_price_yen", default: 0, null: false
     t.datetime "updated_at", null: false
     t.index ["gift_set_id"], name: "index_gift_set_items_on_gift_set_id"
-    t.check_constraint "rounding::text = ANY (ARRAY['floor'::character varying::text, 'round'::character varying::text, 'ceil'::character varying::text])", name: "gift_set_items_valid_rounding"
+    t.check_constraint "rounding::text = ANY (ARRAY['floor'::character varying, 'round'::character varying, 'ceil'::character varying]::text[])", name: "gift_set_items_valid_rounding"
     t.check_constraint "tax_basis::text <> 'exclusive'::text OR tax_rate IS NOT NULL", name: "gift_set_items_exclusive_tax_rate_required"
     t.check_constraint "tax_rate IS NULL OR tax_rate >= 0::numeric AND tax_rate <= 100::numeric", name: "gift_set_items_tax_rate_range"
   end
@@ -268,6 +271,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_12_000001) do
     t.bigint "household_id"
     t.string "invitation_status"
     t.integer "lock_version", default: 0, null: false
+    t.bigint "meal_set_id"
     t.text "name", null: false
     t.text "notes"
     t.text "relationship"
@@ -277,6 +281,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_12_000001) do
     t.datetime "updated_at", null: false
     t.bigint "wedding_id", null: false
     t.index ["household_id"], name: "index_guests_on_household_id"
+    t.index ["meal_set_id"], name: "index_guests_on_meal_set_id"
     t.index ["seating_table_id"], name: "index_guests_on_seating_table_id"
     t.index ["wedding_id", "attendance"], name: "index_guests_on_wedding_id_and_attendance"
     t.index ["wedding_id", "household_id"], name: "index_guests_on_wedding_id_and_household_id"
@@ -298,6 +303,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_12_000001) do
     t.index ["wedding_id"], name: "index_households_on_wedding_id"
   end
 
+  create_table "meal_sets", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.boolean "default_for_target", default: false, null: false
+    t.integer "lock_version", default: 0, null: false
+    t.string "name", null: false
+    t.text "notes"
+    t.string "target_age_group", default: "adult", null: false
+    t.bigint "unit_price_yen", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.bigint "wedding_id", null: false
+    t.index ["wedding_id", "name"], name: "index_meal_sets_on_wedding_id_and_name", unique: true
+    t.index ["wedding_id", "target_age_group"], name: "index_meal_sets_on_wedding_and_default_target", unique: true, where: "(default_for_target = true)"
+    t.index ["wedding_id"], name: "index_meal_sets_on_wedding_id"
+    t.check_constraint "target_age_group::text = ANY (ARRAY['adult'::character varying, 'child'::character varying, 'all'::character varying]::text[])", name: "meal_sets_target_age_group_valid"
+    t.check_constraint "unit_price_yen >= 0", name: "meal_sets_unit_price_non_negative"
+  end
+
   create_table "memberships", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "role", default: "editor", null: false
@@ -307,7 +329,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_12_000001) do
     t.index ["user_id"], name: "index_memberships_on_user_id", unique: true
     t.index ["wedding_id", "user_id"], name: "index_memberships_on_wedding_id_and_user_id", unique: true
     t.index ["wedding_id"], name: "index_memberships_on_wedding_id"
-    t.check_constraint "role::text = ANY (ARRAY['owner'::character varying::text, 'editor'::character varying::text])", name: "memberships_valid_role"
+    t.check_constraint "role::text = ANY (ARRAY['owner'::character varying, 'editor'::character varying]::text[])", name: "memberships_valid_role"
   end
 
   create_table "money_movements", force: :cascade do |t|
@@ -388,7 +410,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_12_000001) do
     t.index ["wedding_id", "planning_item_id", "id"], name: "idx_on_wedding_id_planning_item_id_id_a157950c23"
     t.index ["wedding_id"], name: "index_planning_options_on_wedding_id"
     t.check_constraint "reference_price_yen IS NULL OR reference_price_yen >= 0", name: "planning_options_reference_price_non_negative"
-    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying::text, 'considering'::character varying::text, 'selected'::character varying::text, 'rejected'::character varying::text])", name: "planning_options_valid_status"
+    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying, 'considering'::character varying, 'selected'::character varying, 'rejected'::character varying]::text[])", name: "planning_options_valid_status"
   end
 
   create_table "seating_tables", force: :cascade do |t|
@@ -396,10 +418,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_12_000001) do
     t.datetime "created_at", null: false
     t.string "label", null: false
     t.integer "lock_version", default: 0, null: false
+    t.integer "position_x"
+    t.integer "position_y"
     t.datetime "updated_at", null: false
     t.bigint "wedding_id", null: false
     t.index ["wedding_id", "label"], name: "index_seating_tables_on_wedding_id_and_label", unique: true
     t.index ["wedding_id"], name: "index_seating_tables_on_wedding_id"
+    t.check_constraint "position_x IS NULL OR position_x >= 0 AND position_x <= 100", name: "seating_tables_position_x_range"
+    t.check_constraint "position_y IS NULL OR position_y >= 0 AND position_y <= 100", name: "seating_tables_position_y_range"
   end
 
   create_table "solid_queue_batch_executions", force: :cascade do |t|
@@ -586,13 +612,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_12_000001) do
     t.bigint "wedding_id", null: false
     t.index ["wedding_id", "digest"], name: "index_spreadsheet_import_batches_on_wedding_id_and_digest", unique: true
     t.index ["wedding_id"], name: "index_spreadsheet_import_batches_on_wedding_id"
-    t.check_constraint "state::text = ANY (ARRAY['pending'::character varying::text, 'committed'::character varying::text, 'failed'::character varying::text])", name: "spreadsheet_import_batches_valid_state"
+    t.check_constraint "state::text = ANY (ARRAY['pending'::character varying, 'committed'::character varying, 'failed'::character varying]::text[])", name: "spreadsheet_import_batches_valid_state"
   end
 
   create_table "spreadsheet_import_rows", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.text "error"
-    t.text "mapping_label"
+    t.string "mapping_label"
     t.text "original_data"
     t.string "row_kind", null: false
     t.integer "row_number", null: false
@@ -610,7 +636,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_12_000001) do
     t.index ["spreadsheet_import_batch_id"], name: "index_spreadsheet_import_rows_on_spreadsheet_import_batch_id"
     t.index ["wedding_id", "state"], name: "index_spreadsheet_import_rows_on_wedding_id_and_state"
     t.index ["wedding_id"], name: "index_spreadsheet_import_rows_on_wedding_id"
-    t.check_constraint "state::text = ANY (ARRAY['pending'::character varying::text, 'ready'::character varying::text, 'skipped'::character varying::text, 'conflict'::character varying::text, 'invalid'::character varying::text, 'imported'::character varying::text])", name: "spreadsheet_import_rows_valid_state"
+    t.check_constraint "state::text = ANY (ARRAY['pending'::character varying, 'ready'::character varying, 'skipped'::character varying, 'conflict'::character varying, 'invalid'::character varying, 'imported'::character varying]::text[])", name: "spreadsheet_import_rows_valid_state"
   end
 
   create_table "task_imports", force: :cascade do |t|
@@ -625,7 +651,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_12_000001) do
     t.bigint "wedding_id", null: false
     t.index ["wedding_id", "digest"], name: "index_task_imports_on_wedding_id_and_digest", unique: true
     t.index ["wedding_id"], name: "index_task_imports_on_wedding_id"
-    t.check_constraint "status::text = ANY (ARRAY['pending'::character varying::text, 'committed'::character varying::text])", name: "task_imports_valid_status"
+    t.check_constraint "status::text = ANY (ARRAY['pending'::character varying, 'committed'::character varying]::text[])", name: "task_imports_valid_status"
   end
 
   create_table "task_planning_links", force: :cascade do |t|
@@ -664,9 +690,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_12_000001) do
     t.index ["wedding_id", "source_key"], name: "index_tasks_on_wedding_id_and_source_key", unique: true
     t.index ["wedding_id", "status", "due_on"], name: "index_tasks_on_wedding_id_and_status_and_due_on"
     t.index ["wedding_id"], name: "index_tasks_on_wedding_id"
-    t.check_constraint "assignee::text = ANY (ARRAY['person_a'::character varying::text, 'person_b'::character varying::text, 'both'::character varying::text, 'unknown'::character varying::text])", name: "tasks_valid_assignee"
+    t.check_constraint "assignee::text = ANY (ARRAY['person_a'::character varying, 'person_b'::character varying, 'both'::character varying, 'unknown'::character varying]::text[])", name: "tasks_valid_assignee"
     t.check_constraint "origin::text <> 'import'::text OR source_key IS NOT NULL", name: "import_tasks_require_source"
-    t.check_constraint "origin::text = ANY (ARRAY['ai'::character varying::text, 'manual'::character varying::text, 'import'::character varying::text])", name: "tasks_valid_origin"
+    t.check_constraint "origin::text = ANY (ARRAY['ai'::character varying, 'manual'::character varying, 'import'::character varying]::text[])", name: "tasks_valid_origin"
     t.check_constraint "status::text = ANY (ARRAY['todo'::character varying::text, 'doing'::character varying::text, 'done'::character varying::text, 'cancelled'::character varying::text])", name: "tasks_valid_status"
   end
 
@@ -714,10 +740,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_12_000001) do
   add_foreign_key "guest_gift_assignments", "guests"
   add_foreign_key "guest_gift_assignments", "weddings"
   add_foreign_key "guests", "households"
+  add_foreign_key "guests", "meal_sets"
   add_foreign_key "guests", "seating_tables"
   add_foreign_key "guests", "weddings"
   add_foreign_key "households", "cash_gift_rules"
   add_foreign_key "households", "weddings"
+  add_foreign_key "meal_sets", "weddings"
   add_foreign_key "memberships", "users"
   add_foreign_key "memberships", "weddings"
   add_foreign_key "money_movements", "budget_items"

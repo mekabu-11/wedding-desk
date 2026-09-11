@@ -9,7 +9,7 @@ class CashGiftRulesController < ApplicationController
     @cash_gift_rule = current_wedding.cash_gift_rules.new(rule_params)
     saved = ActiveRecord::Base.transaction do
       result = @cash_gift_rule.save
-      record_change!(@cash_gift_rule, "cash_gift_rule_created", after: change_snapshot(@cash_gift_rule, :label, :default_amount_yen)) if result
+      record_change!(@cash_gift_rule, "cash_gift_rule_created", after: change_snapshot(@cash_gift_rule, :label, :default_amount_yen, :fallback_attribute, :fallback_value)) if result
       result
     end
     if saved
@@ -22,10 +22,10 @@ class CashGiftRulesController < ApplicationController
   def edit; end
 
   def update
-    before = change_snapshot(@cash_gift_rule, :label, :default_amount_yen)
+    before = change_snapshot(@cash_gift_rule, :label, :default_amount_yen, :fallback_attribute, :fallback_value)
     saved = ActiveRecord::Base.transaction do
       result = @cash_gift_rule.update(rule_params)
-      after = change_snapshot(@cash_gift_rule, :label, :default_amount_yen)
+      after = change_snapshot(@cash_gift_rule, :label, :default_amount_yen, :fallback_attribute, :fallback_value)
       record_change!(@cash_gift_rule, "cash_gift_rule_updated", before: before, after: after) if result && before != after
       result
     end
@@ -54,6 +54,6 @@ class CashGiftRulesController < ApplicationController
   end
 
   def rule_params
-    params.require(:cash_gift_rule).permit(:label, :default_amount_yen, :lock_version)
+    params.require(:cash_gift_rule).permit(:label, :default_amount_yen, :fallback_attribute, :fallback_value, :lock_version)
   end
 end

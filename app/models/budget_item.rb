@@ -5,7 +5,8 @@ class BudgetItem < ApplicationRecord
   CALCULATION_MODES = { "manual" => "金額を直接入力", "quantity" => "単価×数量" }.freeze
   QUANTITY_BASES = {
     "manual" => "手動数量", "attending_guests" => "出席ゲスト", "attending_adults" => "出席大人",
-    "attending_children" => "出席子ども", "attending_households" => "出席世帯", "seating_tables" => "使用テーブル"
+    "attending_children" => "出席子ども", "attending_households" => "出席世帯", "seating_tables" => "使用テーブル",
+    "meal_set" => "食事セット対象人数"
   }.freeze
   TAX_BASES = { "inclusive" => "税込", "exclusive" => "税抜", "unknown" => "不明" }.freeze
   CATEGORY_LABELS = {
@@ -13,7 +14,7 @@ class BudgetItem < ApplicationRecord
     "travel" => "お車代", "production" => "演出", "music" => "音楽", "dress" => "衣装", "photo" => "写真",
     "movie" => "映像", "invitation" => "招待状", "accommodation" => "宿泊", "other" => "その他"
   }.freeze
-  SOURCE_KINDS = { "manual" => "手動", "planning_option" => "検討候補", "cash_gift" => "ご祝儀", "travel_guest" => "個人のお車代", "travel_household" => "世帯のお車代", "gift_assignment" => "引き出物割当", "guest_gift_assignment" => "個人引き出物割当" }.freeze
+  SOURCE_KINDS = { "manual" => "手動", "planning_option" => "検討候補", "cash_gift" => "ご祝儀", "cash_gift_guest" => "属性別ご祝儀", "travel_guest" => "個人のお車代", "travel_household" => "世帯のお車代", "gift_assignment" => "引き出物割当", "guest_gift_assignment" => "個人引き出物割当", "meal_set" => "食事セット" }.freeze
   PAYMENT_STATUS_FILTERS = {
     "unsettled" => "未処理",
     "partial" => "一部処理",
@@ -74,6 +75,7 @@ class BudgetItem < ApplicationRecord
     when "attending_children" then wedding.guests.attending.where(age_group: "child").count
     when "attending_households" then wedding.guests.attending.where.not(household_id: nil).distinct.count(:household_id)
     when "seating_tables" then wedding.seating_tables.joins(:guests).merge(Guest.attending).distinct.count
+    when "meal_set" then MealSet.find_by(id: source_id)&.attending_guest_count.to_i
     end
   end
 
@@ -136,6 +138,8 @@ class BudgetItem < ApplicationRecord
     record = case source_kind
     when "planning_option" then PlanningOption.find_by(id: source_id)
     when "cash_gift", "travel_household" then Household.find_by(id: source_id)
+    when "cash_gift_guest" then Guest.find_by(id: source_id)
+    when "meal_set" then MealSet.find_by(id: source_id)
     when "travel_guest" then Guest.find_by(id: source_id)
     when "gift_assignment" then GiftAssignment.find_by(id: source_id)
     when "guest_gift_assignment" then GuestGiftAssignment.find_by(id: source_id)
