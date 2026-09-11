@@ -8,7 +8,12 @@ class GiftSetsController < ApplicationController
 
   def create
     @gift_set = current_wedding.gift_sets.new(gift_set_params)
-    if @gift_set.save
+    saved = ActiveRecord::Base.transaction do
+      result = @gift_set.save
+      record_change!(@gift_set, "gift_set_created", after: change_snapshot(@gift_set, :name, :notes)) if result
+      result
+    end
+    if saved
       redirect_to guests_path(tab: "gifts"), notice: "引き出物セットを追加しました。", status: :see_other
     else
       3.times { @gift_set.gift_set_items.build } if @gift_set.gift_set_items.empty?
@@ -21,7 +26,14 @@ class GiftSetsController < ApplicationController
   end
 
   def update
-    if @gift_set.update(gift_set_params)
+    before = change_snapshot(@gift_set, :name, :notes)
+    saved = ActiveRecord::Base.transaction do
+      result = @gift_set.update(gift_set_params)
+      after = change_snapshot(@gift_set, :name, :notes)
+      record_change!(@gift_set, "gift_set_updated", before: before, after: after) if result && before != after
+      result
+    end
+    if saved
       redirect_to guests_path(tab: "gifts"), notice: "引き出物セットを保存しました。", status: :see_other
     else
       render :edit, status: :unprocessable_entity
@@ -31,7 +43,11 @@ class GiftSetsController < ApplicationController
   end
 
   def destroy
-    @gift_set.destroy!
+    before = change_snapshot(@gift_set, :name, :notes)
+    ActiveRecord::Base.transaction do
+      @gift_set.destroy!
+      record_change!(@gift_set, "gift_set_deleted", before: before)
+    end
     redirect_to guests_path(tab: "gifts"), notice: "引き出物セットを削除しました。", status: :see_other
   rescue ActiveRecord::DeleteRestrictionError
     redirect_to guests_path(tab: "gifts"), alert: "割当があるセットは削除できません。先に割当を見直してください。"

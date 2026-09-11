@@ -23,6 +23,45 @@ class Task < ApplicationRecord
   scope :open_items, -> { where(status: %w[todo doing]) }
   scope :by_deadline, -> { order(Arel.sql("COALESCE(due_at, due_on::timestamp AT TIME ZONE 'Asia/Tokyo') ASC NULLS LAST"), :id) }
 
+  STATUS_SORT_RANK = { "doing" => 0, "todo" => 1, "done" => 2, "cancelled" => 3 }.freeze
+
+  def self.sort_for_gantt(tasks, today: Date.current, now: Time.current)
+    tasks.sort_by { |task| gantt_sort_key(task, today: today, now: now) }
+  end
+
+  def self.gantt_sort_key(task, today:, now:)
+    deadline = task.due_on || task.due_at&.in_time_zone&.to_date
+    date_value = deadline || task.starts_on
+    due_time = task.due_at&.in_time_zone || date_value&.in_time_zone&.beginning_of_day
+    start_date = task.starts_on || date_value
+    status_rank = STATUS_SORT_RANK.fetch(task.status, STATUS_SORT_RANK.size)
+    far_date = Date.new(9999, 12, 31)
+    far_time = Time.zone.local(9999, 12, 31)
+
+    return [4, status_rank, far_time, far_date, task.id] if date_value.nil?
+
+    overdue = deadline.present? && (task.due_at ? task.due_at < now : deadline < today)
+    active_today = !overdue && start_date <= today && (deadline.nil? || deadline >= today)
+    bucket = if overdue
+      0
+    elsif active_today
+      1
+    elsif date_value <= today + 7.days
+      2
+    else
+      3
+    end
+
+    # Overdue items are oldest first, active items prioritize progress,
+    # and upcoming items are nearest deadline first.
+    primary, secondary = if bucket == 1
+      [status_rank, due_time || far_time]
+    else
+      [due_time || far_time, status_rank]
+    end
+    [bucket, primary, secondary, start_date || far_date, task.id]
+  end
+
   LEGACY_ASSIGNEES = { "self" => "person_a", "partner" => "person_b" }.freeze
 
   def self.normalize_assignee(value)

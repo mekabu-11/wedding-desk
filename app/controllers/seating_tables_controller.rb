@@ -7,7 +7,12 @@ class SeatingTablesController < ApplicationController
 
   def create
     @seating_table = current_wedding.seating_tables.new(table_params)
-    if @seating_table.save
+    saved = ActiveRecord::Base.transaction do
+      result = @seating_table.save
+      record_change!(@seating_table, "seating_table_created", after: change_snapshot(@seating_table, :label, :capacity)) if result
+      result
+    end
+    if saved
       redirect_to guests_path(tab: "seating"), notice: "卓を追加しました。", status: :see_other
     else
       render :new, status: :unprocessable_entity
@@ -17,7 +22,14 @@ class SeatingTablesController < ApplicationController
   def edit; end
 
   def update
-    if @seating_table.update(table_params)
+    before = change_snapshot(@seating_table, :label, :capacity)
+    saved = ActiveRecord::Base.transaction do
+      result = @seating_table.update(table_params)
+      after = change_snapshot(@seating_table, :label, :capacity)
+      record_change!(@seating_table, "seating_table_updated", before: before, after: after) if result && before != after
+      result
+    end
+    if saved
       redirect_to guests_path(tab: "seating"), notice: "卓を保存しました。", status: :see_other
     else
       render :edit, status: :unprocessable_entity
@@ -27,7 +39,11 @@ class SeatingTablesController < ApplicationController
   end
 
   def destroy
-    @seating_table.destroy!
+    before = change_snapshot(@seating_table, :label, :capacity)
+    ActiveRecord::Base.transaction do
+      @seating_table.destroy!
+      record_change!(@seating_table, "seating_table_deleted", before: before)
+    end
     redirect_to guests_path(tab: "seating"), notice: "卓を削除しました。", status: :see_other
   end
 

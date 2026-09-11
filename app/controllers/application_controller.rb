@@ -25,4 +25,20 @@ class ApplicationController < ActionController::Base
     response.headers["Cache-Control"] = "no-store"
     response.headers["Referrer-Policy"] = "same-origin"
   end
+
+  def change_snapshot(record, *fields)
+    fields.flatten.to_h { |field| [field.to_s, record.public_send(field)] }
+  end
+
+  def record_change!(target, action, before: nil, after: nil, source: "manual")
+    ChangeEvent.record!(
+      wedding: current_wedding,
+      actor: current_user,
+      target: target,
+      action: action,
+      before: before&.to_json,
+      after: after&.to_json,
+      source: source
+    )
+  end
 end

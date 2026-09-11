@@ -11,6 +11,7 @@ class HouseholdsController < ApplicationController
     Household.transaction do
       @household.save!
       ensure_cash_gift if params[:cash_gift] == "1"
+      record_change!(@household, "household_created", after: change_snapshot(@household, :name, :cash_gift_rule_id, :archived, :notes))
     end
     redirect_to guests_path(tab: "households"), notice: "世帯を追加しました。", status: :see_other
   rescue ActiveRecord::RecordInvalid => error
@@ -25,8 +26,11 @@ class HouseholdsController < ApplicationController
 
   def update
     Household.transaction do
+      before = change_snapshot(@household, :name, :cash_gift_rule_id, :archived, :notes)
       @household.update!(household_params)
       ensure_cash_gift if params[:cash_gift] == "1"
+      after = change_snapshot(@household, :name, :cash_gift_rule_id, :archived, :notes)
+      record_change!(@household, "household_updated", before: before, after: after) if before != after
     end
     redirect_to guests_path(tab: "households"), notice: "世帯を保存しました。", status: :see_other
   rescue ActiveRecord::StaleObjectError
@@ -41,7 +45,11 @@ class HouseholdsController < ApplicationController
     if @household.cash_gift_budget_item.present?
       return redirect_to guests_path(tab: "households"), alert: "ご祝儀明細がある世帯は削除できません。アーカイブしてください。"
     end
-    @household.destroy!
+    before = change_snapshot(@household, :name, :cash_gift_rule_id, :archived, :notes)
+    Household.transaction do
+      @household.destroy!
+      record_change!(@household, "household_deleted", before: before)
+    end
     redirect_to guests_path(tab: "households"), notice: "世帯を削除しました。", status: :see_other
   rescue ActiveRecord::DeleteRestrictionError
     redirect_to guests_path(tab: "households"), alert: "引き出物割当がある世帯は削除できません。アーカイブしてください。"
@@ -56,7 +64,7 @@ class HouseholdsController < ApplicationController
   end
 
   def household_params
-    params.require(:household).permit(:code, :name, :cash_gift_rule_id, :notes, :archived, :lock_version)
+    params.require(:household).permit(:name, :cash_gift_rule_id, :notes, :archived, :lock_version)
   end
 
   def load_options

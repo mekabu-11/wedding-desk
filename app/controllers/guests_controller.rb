@@ -4,6 +4,11 @@ class GuestsController < ApplicationController
   def index
     @tab = params[:tab].presence_in(%w[individuals households seating gifts]) || "individuals"
     @search_query = params[:q].to_s.strip[0, 100]
+    @attendance = params[:attendance].presence_in(Guest::ATTENDANCES.keys)
+    @side = params[:side].presence_in(Guest::SIDES.keys)
+    @invitation_status = params[:invitation_status].presence_in(Guest::INVITATION_STATUSES.keys)
+    @household_filter = params[:household].presence_in(%w[assigned unassigned])
+    @role = params[:role].presence_in(Guest::ROLES.keys)
     @page = [params[:page].to_i, 1].max
     case @tab
     when "individuals" then load_individuals
@@ -71,10 +76,17 @@ class GuestsController < ApplicationController
 
   def load_individuals
     scope = current_wedding.guests.includes(:household, :seating_table).ordered
-    if @search_query.present?
+    scope = scope.where(attendance: @attendance) if @attendance
+    scope = scope.where(side: @side) if @side
+    scope = scope.where(invitation_status: @invitation_status) if @invitation_status
+    scope = @household_filter == "assigned" ? scope.where.not(household_id: nil) : scope.where(household_id: nil) if @household_filter
+    if @search_query.present? || @role.present?
       candidates = scope.limit(2_001).to_a
       @search_truncated = candidates.size > 2_000
-      @guests_scope = candidates.select { |guest| searchable_guest?(guest, @search_query) }
+      @guests_scope = candidates.select do |guest|
+        (@search_query.blank? || searchable_guest?(guest, @search_query)) &&
+          (@role.blank? || Array(guest.roles).include?(@role))
+      end
       @guests = @guests_scope.slice((@page - 1) * 30, 30) || []
     else
       @guests_scope = scope

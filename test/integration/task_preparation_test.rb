@@ -110,6 +110,8 @@ class TaskPreparationTest < ActionDispatch::IntegrationTest
     assert_select ".task-toolbar .task-filters"
     assert_select "[data-filter-open][aria-haspopup='dialog']", count: 1
     assert_select "dialog[data-filter-dialog]", count: 1
+    assert_select "details.task-bulk-menu", count: 1
+    assert_select "details.task-bulk-menu summary", text: "一括変更"
     assert_select "button[form='task-selection-form']", text: /選択を一括変更/
     refute_includes response.body, "現在のページを一括変更"
     assert_select ".task-toolbar .task-result-count"

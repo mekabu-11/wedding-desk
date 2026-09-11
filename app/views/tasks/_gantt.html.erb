@@ -1,27 +1,36 @@
 <section class="gantt-section">
+  <% navigation_base = @range == "month" ? @anchor.beginning_of_month : @range_start %>
+  <% period_label = @range == "month" ? @anchor.strftime("%Y年%-m月") : "#{@range_start.strftime("%-m/%-d")}〜#{@range_end.strftime("%-m/%-d")}" %>
   <div class="section-heading">
-    <div><h2>スケジュール</h2><p class="muted"><%= @range_start.strftime("%Y/%m/%d") %>〜<%= @range_end.strftime("%Y/%m/%d") %></p></div>
-    <div class="task-actions">
-      <%= link_to "前へ", tasks_path(request.query_parameters.merge(view: "gantt", anchor: (@range_start - (@range == "month" ? 1.month : 1.week)).iso8601)), class: "button secondary" %>
-      <%= link_to "週", tasks_path(request.query_parameters.merge(view: "gantt", range: "week", anchor: @anchor.iso8601)), class: "button #{@range == 'week' ? 'primary' : 'secondary'}" %>
-      <%= link_to "月", tasks_path(request.query_parameters.merge(view: "gantt", range: "month", anchor: @anchor.iso8601)), class: "button #{@range == 'month' ? 'primary' : 'secondary'}" %>
-      <%= link_to "次へ", tasks_path(request.query_parameters.merge(view: "gantt", anchor: (@range_start + (@range == "month" ? 1.month : 1.week)).iso8601)), class: "button secondary" %>
+    <div><h2>スケジュール</h2><p class="muted gantt-period-caption"><strong><%= period_label %></strong><span><%= @range_start.strftime("%-m/%-d") %>〜<%= @range_end.strftime("%-m/%-d") %>を表示</span></p></div>
+    <div class="gantt-controls">
+      <div class="gantt-navigation">
+        <%= link_to "今日", tasks_path(request.query_parameters.merge(view: "gantt", range: @range, anchor: Date.current.iso8601)), class: "button secondary gantt-today-button" %>
+        <%= link_to "←", tasks_path(request.query_parameters.merge(view: "gantt", anchor: (navigation_base - (@range == "month" ? 1.month : 1.week)).iso8601)), class: "button secondary gantt-nav-button", aria: { label: @range == "month" ? "前の月" : "前の週" }, title: @range == "month" ? "前の月" : "前の週" %>
+        <span class="gantt-current-period" aria-live="polite"><%= period_label %></span>
+        <%= link_to "→", tasks_path(request.query_parameters.merge(view: "gantt", anchor: (navigation_base + (@range == "month" ? 1.month : 1.week)).iso8601)), class: "button secondary gantt-nav-button", aria: { label: @range == "month" ? "次の月" : "次の週" }, title: @range == "month" ? "次の月" : "次の週" %>
+      </div>
+      <div class="gantt-range-switch" aria-label="表示単位">
+        <%= link_to "週", tasks_path(request.query_parameters.merge(view: "gantt", range: "week", anchor: @anchor.iso8601)), class: "button #{@range == 'week' ? 'primary' : 'secondary'}" %>
+        <%= link_to "月", tasks_path(request.query_parameters.merge(view: "gantt", range: "month", anchor: @anchor.iso8601)), class: "button #{@range == 'month' ? 'primary' : 'secondary'}" %>
+      </div>
     </div>
   </div>
+  <p class="gantt-interaction-note">バーをドラッグして日程を移動できます。クリックすると詳細を編集します。</p>
   <p class="gantt-scroll-hint">左右にスワイプして日付を確認できます。</p>
   <% if @gantt_limit_exceeded %><p class="flash flash-alert">表示対象が2000件を超えています。条件を追加してください。</p><% end %>
   <div class="gantt-scroll">
-    <div class="gantt-board <%= @range %> days-<%= (@range_end - @range_start).to_i + 1 %>">
+    <div class="gantt-board <%= @range %> days-<%= (@range_end - @range_start).to_i + 1 %>" data-gantt-board data-range-start="<%= @range_start.iso8601 %>" data-days="<%= (@range_end - @range_start).to_i + 1 %>">
       <div class="gantt-label gantt-header-label">タスク</div>
       <div class="gantt-timeline gantt-header">
-        <% (@range_start..@range_end).each do |day| %><div class="<%= 'today' if day == Date.current %>"><span><%= day.strftime("%-m/%-d") %></span><small><%= %w[日 月 火 水 木 金 土][day.wday] %></small></div><% end %>
+        <% (@range_start..@range_end).each do |day| %><div class="<%= ['gantt-day', ('today' if day == Date.current), ('month-start' if @range == 'month' && day.day == 1)].compact.join(' ') %>"><% if @range == "month" && day.day == 1 %><b class="gantt-month-label"><%= day.strftime("%-m月") %></b><% end %><span><%= day.strftime("%-m/%-d") %></span><small><%= %w[日 月 火 水 木 金 土][day.wday] %></small></div><% end %>
       </div>
       <% @gantt_tasks.each do |task| %>
         <% raw_start = task.starts_on || task.due_on || task.due_at&.to_date; raw_end = task.due_on || task.due_at&.to_date || task.starts_on; start_on = [raw_start, @range_start].max; end_on = [raw_end, @range_end].min; column = (start_on - @range_start).to_i + 1; span = (end_on - start_on).to_i + 1; due_only = task.starts_on.blank? && (task.due_on || task.due_at).present? %>
         <%= link_to edit_task_path(task), class: "gantt-label" do %><strong><%= task.title %></strong><small><%= task.assignee_label %></small><% end %>
         <div class="gantt-timeline gantt-row-timeline">
           <% ((@range_end - @range_start).to_i + 1).times do |index| %><span class="<%= 'today' if @range_start + index == Date.current %>"></span><% end %>
-          <%= link_to edit_task_path(task), class: "gantt-bar #{'marker' if due_only} column-#{column} span-#{span}", title: "#{raw_start}〜#{raw_end}" do %><span><%= due_only ? "◆" : Task::STATUSES[task.status] %></span><% end %>
+          <%= link_to edit_task_path(task), class: "gantt-bar column-#{column} span-#{span} #{'marker' if due_only}", title: "#{raw_start}〜#{raw_end}", draggable: task.due_at.blank?, data: { gantt_task_id: task.id, gantt_update_url: task_path(task), gantt_starts_on: task.starts_on&.iso8601, gantt_due_on: task.due_on&.iso8601, gantt_lock_version: task.lock_version } do %><span><%= due_only ? "◆" : Task::STATUSES.fetch(task.status, task.status) %></span><% end %>
         </div>
       <% end %>
     </div>

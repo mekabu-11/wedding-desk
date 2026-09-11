@@ -13,7 +13,12 @@ class MoneyMovementsController < ApplicationController
       return render_idempotency_conflict
     end
     @money_movement = @budget_item.money_movements.new(movement_params.merge(wedding: current_wedding))
-    if @money_movement.save
+    saved = ActiveRecord::Base.transaction do
+      result = @money_movement.save
+      record_change!(@money_movement, "money_movement_created", after: movement_change_snapshot(@money_movement)) if result
+      result
+    end
+    if saved
       redirect_to budget_items_path, notice: "入出金履歴を追加しました。", status: :see_other
     else
       render :new, status: :unprocessable_entity
@@ -32,7 +37,14 @@ class MoneyMovementsController < ApplicationController
   def edit; end
 
   def update
-    if @money_movement.update(movement_params)
+    before = movement_change_snapshot(@money_movement)
+    saved = ActiveRecord::Base.transaction do
+      result = @money_movement.update(movement_params)
+      after = movement_change_snapshot(@money_movement)
+      record_change!(@money_movement, "money_movement_updated", before: before, after: after) if result && before != after
+      result
+    end
+    if saved
       redirect_to budget_items_path, notice: "入出金履歴を保存しました。", status: :see_other
     else
       render :edit, status: :unprocessable_entity
@@ -42,7 +54,11 @@ class MoneyMovementsController < ApplicationController
   end
 
   def destroy
-    @money_movement.destroy!
+    before = movement_change_snapshot(@money_movement)
+    ActiveRecord::Base.transaction do
+      @money_movement.destroy!
+      record_change!(@money_movement, "money_movement_deleted", before: before)
+    end
     redirect_to budget_items_path, notice: "入出金履歴を削除しました。", status: :see_other
   end
 
@@ -76,5 +92,9 @@ class MoneyMovementsController < ApplicationController
     @money_movement = @budget_item.money_movements.new(movement_params)
     @money_movement.errors.add(:idempotency_key, "同じ識別子で異なる入出金内容は登録できません")
     render :new, status: :unprocessable_entity
+  end
+
+  def movement_change_snapshot(movement)
+    change_snapshot(movement, :budget_item_id, :occurred_on, :kind, :amount_yen, :note, :idempotency_key)
   end
 end

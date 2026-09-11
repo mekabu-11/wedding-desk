@@ -24,7 +24,7 @@
     <nav class="toc" aria-label="目次">
       <strong>CONTENTS</strong>
       <a href="#login">1. ログイン</a>
-      <a href="#dashboard">2. 概要を見る</a>
+      <a href="#dashboard">2. ダッシュボードを見る</a>
       <a href="#contact">3. 連絡を登録</a>
       <a href="#attachments">4. 画像・PDFを添付</a>
       <a href="#review">5. 候補を確認</a>
@@ -43,11 +43,11 @@
       </section>
 
       <section class="step" id="dashboard">
-        <h2><span>2</span>概要で今日の状況を見る</h2>
-        <p class="lead">ログイン後の「概要」には、確認待ちの候補、これからやること、完了したこと、最近の資料がまとまります。</p>
+        <h2><span>2</span>ダッシュボードで今日の状況を見る</h2>
+        <p class="lead">ログイン後の「ダッシュボード」には、確認待ちの候補、これからやること、完了したこと、最近の資料がまとまります。</p>
         <div class="shot"><img src="screenshots/dashboard.svg" alt="Wedding Deskのダッシュボードのサンプル"><div class="caption">画面例：期限の近いタスクと最近登録した資料をひとつの画面で確認</div></div>
         <div class="cols"><article class="card"><h3>確認待ちの候補</h3><p>登録した連絡から見つかった、まだタスク化していない候補です。原文と照らし合わせて判断します。</p></article><article class="card"><h3>これからやること</h3><p>期限・担当・状態をもとに、次に進めるタスクが表示されます。タスクを開いて状態を更新できます。</p></article></div>
-        <div class="tip"><strong>トップ写真を設定する</strong><br>「結婚式の設定」からふたりの写真を登録すると、概要画面の上部に表示できます。JPG・PNG・WebP・HEIC、10MBまで対応しています。</div>
+        <div class="tip"><strong>トップ写真を設定する</strong><br>「結婚式の設定」からふたりの写真を登録すると、ダッシュボードの上部に表示できます。JPG・PNG・WebP・HEIC、10MBまで対応しています。</div>
       </section>
 
       <section class="step" id="contact">
@@ -74,7 +74,7 @@
 
       <section class="step" id="import">
         <h2><span>6</span>Excelからタスクを移行する</h2>
-        <p class="lead">「やること → Excelをまとめて移行」から2つのxlsxを選び、統合プレビューで警告と担当A/Bを確認してから一括登録します。数式は実行せず、実績額や日付不明の金額は要確認で残ります。旧JSONのタスク取り込みも利用できます。</p>
+        <p class="lead">「結婚式の設定 → 初回データ移行 → Excelをまとめて移行」から2つのxlsxを選び、統合プレビューで警告と担当A/Bを確認してから一括登録します。数式は実行せず、実績額や日付不明の金額は要確認で残ります。旧JSONのタスク取り込みも利用できます。</p>
         <p class="muted">BGMシートの「〃」「同上」は直前のシーンにまとめ、内容のない行は候補として登録しません。</p>
         <div class="shot"><img src="screenshots/task-import.svg" alt="Wedding Deskのタスク取り込み画面のサンプル"><div class="caption">画面例：import_candidates.jsonを選び、内容を確認してから登録</div></div>
         <ol class="checklist"><li>「やること」→「データを取り込む」を開く</li><li><span class="key">import_candidates.json</span> を選び、「内容を確認する」を押す</li><li>元の担当名を「本人A」「本人B」「ふたり」に割り当てる</li><li>タスク・期限・状態を確認し、「確認したタスクを登録する」を押す</li></ol>
@@ -83,9 +83,9 @@
 
       <section class="step" id="planning">
         <h2><span>7</span>検討・決定を進める</h2>
-        <p class="lead">「検討・決定」から演出やBGMなどの項目を追加し、候補を複数登録します。採用時は費用の扱いを必ず選び、既存BudgetItemへのリンクや新しい支出を同時に保存できます。</p>
-        <div class="cols"><article class="card"><h3>BGM</h3><p>BGMカテゴリでは候補ごとに希望曲A/B、決定曲、アーティスト、開始秒、シーン、元表記を登録できます。</p></article><article class="card"><h3>関連付け</h3><p>項目詳細から費用とタスクを追加・解除できます。リンクを解除してもBudgetItemや入出金履歴は削除されません。</p></article></div>
-        <div class="tip"><strong>採用の変更</strong><br>採用候補を変えても以前のBudgetItemや入出金履歴は残ります。収支はBudgetItemを一度だけ集計します。</div>
+        <p class="lead">「検討・決定」から演出やBGMなどの項目を追加し、候補を複数登録します。採用時は費用の扱いを必ず選び、登録済みの金額への紐付けや新しい支出を同時に保存できます。</p>
+        <div class="cols"><article class="card"><h3>BGM</h3><p>BGMカテゴリでは候補ごとに希望曲A/B、決定曲、アーティスト、開始秒、シーン、元表記を登録できます。</p></article><article class="card"><h3>関連付け</h3><p>項目詳細から費用とタスクを追加・解除できます。リンクを解除しても費用項目や入出金履歴は削除されません。</p></article></div>
+        <div class="tip"><strong>採用の変更</strong><br>採用候補を変えても以前の費用項目や入出金履歴は残ります。収支は同じ費用項目を一度だけ集計します。</div>
       </section>
 
       <section class="step" id="management">

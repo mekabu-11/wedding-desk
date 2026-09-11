@@ -24,7 +24,15 @@ class MusicDetailsController < ApplicationController
   end
 
   def save_detail
-    if @music_detail.save
+    before = @music_detail.persisted? ? change_snapshot(@music_detail, :wish_track_a, :wish_track_b, :selected_track, :artist, :start_offset_seconds, :original_text, :scene) : nil
+    saved = ActiveRecord::Base.transaction do
+      result = @music_detail.save
+      after = change_snapshot(@music_detail, :planning_option_id, :wish_track_a, :wish_track_b, :selected_track, :artist, :start_offset_seconds, :original_text, :scene)
+      action = before ? "music_detail_updated" : "music_detail_created"
+      record_change!(@music_detail, action, before: before, after: after) if result && (before.nil? || before != after.except("planning_option_id"))
+      result
+    end
+    if saved
       redirect_to planning_item_path(@option.planning_item), notice: "BGM情報を保存しました。", status: :see_other
     else
       redirect_to planning_item_path(@option.planning_item), alert: "BGM情報を保存できませんでした。", status: :see_other

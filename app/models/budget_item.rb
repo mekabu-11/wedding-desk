@@ -9,6 +9,13 @@ class BudgetItem < ApplicationRecord
   }.freeze
   TAX_BASES = { "inclusive" => "税込", "exclusive" => "税抜", "unknown" => "不明" }.freeze
   SOURCE_KINDS = { "manual" => "手動", "cash_gift" => "ご祝儀", "travel_guest" => "個人のお車代", "travel_household" => "世帯のお車代", "gift_assignment" => "引き出物割当" }.freeze
+  PAYMENT_STATUS_FILTERS = {
+    "unsettled" => "未処理",
+    "partial" => "一部処理",
+    "completed" => "完了",
+    "unknown" => "金額未確認",
+    "overpaid" => "要確認"
+  }.freeze
 
   belongs_to :wedding
   has_many :money_movements, dependent: :restrict_with_error
@@ -76,13 +83,25 @@ class BudgetItem < ApplicationRecord
   end
 
   def payment_status
-    return "金額未確認" if amount_yen.nil?
-    return(direction == "income" ? "受取不要" : "支払い不要") if amount_yen.zero? && money_movements.empty?
+    case payment_status_key
+    when "unknown" then "金額未確認"
+    when "not_required" then direction == "income" ? "受取不要" : "支払い不要"
+    when "unsettled" then direction == "income" ? "未受取" : "未払い"
+    when "partial" then direction == "income" ? "一部受取" : "一部"
+    when "completed" then direction == "income" ? "受取完了" : "完了"
+    when "overpaid" then "超過・要確認"
+    else "要確認"
+    end
+  end
+
+  def payment_status_key
+    return "unknown" if amount_yen.nil?
+    return "not_required" if amount_yen.zero? && money_movements.empty?
     net = net_movement_amount
-    return(direction == "income" ? "未受取" : "未払い") if net.zero?
-    return(direction == "income" ? "一部受取" : "一部") if net < amount_yen
-    return(direction == "income" ? "受取完了" : "完了") if net == amount_yen
-    "超過・要確認"
+    return "unsettled" if net.zero?
+    return "partial" if net < amount_yen
+    return "completed" if net == amount_yen
+    "overpaid"
   end
 
   private

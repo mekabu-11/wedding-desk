@@ -11,6 +11,7 @@ class GiftAssignmentsController < ApplicationController
     GiftAssignment.transaction do
       @gift_assignment.save!
       create_or_update_budget_item!
+      record_change!(@gift_assignment, "gift_assignment_created", after: change_snapshot(@gift_assignment, :household_id, :gift_set_id, :quantity, :included, :notes))
     end
     redirect_to guests_path(tab: "gifts"), notice: "引き出物を割り当てました。", status: :see_other
   rescue ActiveRecord::RecordInvalid
@@ -28,8 +29,11 @@ class GiftAssignmentsController < ApplicationController
 
   def update
     GiftAssignment.transaction do
+      before = change_snapshot(@gift_assignment, :household_id, :gift_set_id, :quantity, :included, :notes)
       @gift_assignment.update!(assignment_params)
       create_or_update_budget_item!
+      after = change_snapshot(@gift_assignment, :household_id, :gift_set_id, :quantity, :included, :notes)
+      record_change!(@gift_assignment, "gift_assignment_updated", before: before, after: after) if before != after
     end
     redirect_to guests_path(tab: "gifts"), notice: "引き出物の割当を保存しました。", status: :see_other
   rescue ActiveRecord::RecordInvalid
@@ -44,8 +48,10 @@ class GiftAssignmentsController < ApplicationController
   end
 
   def destroy
+    before = change_snapshot(@gift_assignment, :household_id, :gift_set_id, :quantity, :included, :notes)
     GiftAssignment.transaction do
       @gift_assignment.destroy!
+      record_change!(@gift_assignment, "gift_assignment_deleted", before: before)
     end
     redirect_to guests_path(tab: "gifts"), notice: "引き出物の割当を解除しました。明細は履歴のため除外で残ります。", status: :see_other
   rescue ActiveRecord::DeleteRestrictionError

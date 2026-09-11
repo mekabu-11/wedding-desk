@@ -50,7 +50,7 @@ class Phase3Test < ActionDispatch::IntegrationTest
     assert_select "select[name='document[source_type]']", count: 0
     assert_select "select[name='document[direction]']", count: 0
     assert_select "input[name='document[occurred_at]']", count: 0
-    assert_includes response.body, "情報元は自動で分類します"
+    assert_includes response.body, "入力形式と情報元を分けて整理します"
 
     post documents_path, params: { document: { original_text: "文章入力だけで保存する" }, save_only: "1" }
     document = @wedding.documents.order(:id).last
@@ -59,19 +59,33 @@ class Phase3Test < ActionDispatch::IntegrationTest
     assert_nil document.occurred_at
   end
 
-  test "document type filters group legacy text sources" do
+  test "document filters keep input format and origin as separate axes" do
     @wedding.documents.create!(title: "メール連絡", source_type: "email", direction: "incoming", original_text: "メール本文")
     @wedding.documents.create!(title: "LINE連絡", source_type: "line", direction: "incoming", original_text: "LINE本文")
+    @wedding.documents.create!(title: "打ち合わせメモ", source_type: "meeting", direction: "incoming", original_text: "打ち合わせ本文")
     @wedding.documents.create!(title: "写真資料", source_type: "photo", direction: "unknown", original_text: "写真の説明")
 
-    get documents_path(source: "text")
+    get documents_path(media: "text")
     assert_response :success
     assert_includes response.body, "メール連絡"
     assert_includes response.body, "LINE連絡"
+    assert_includes response.body, "打ち合わせメモ"
     refute_includes response.body, "写真資料"
     assert_includes response.body, "写真・スキャン"
     assert_includes response.body, "PDF・ファイル"
     assert_includes response.body, "打ち合わせ"
+    assert_select "nav.tabs a", text: "打ち合わせ", count: 0
+    assert_select "select[name='origin'] option", text: "打ち合わせ", count: 1
+
+    get documents_path(origin: "meeting")
+    assert_response :success
+    assert_includes response.body, "打ち合わせメモ"
+    refute_includes response.body, "メール連絡"
+
+    get documents_path(source: "meeting")
+    assert_response :success
+    assert_includes response.body, "打ち合わせメモ"
+    refute_includes response.body, "メール連絡"
   end
 
   test "save only does not start analysis or cross-document organization" do

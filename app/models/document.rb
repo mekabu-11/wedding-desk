@@ -6,10 +6,16 @@ class Document < ApplicationRecord
     "email" => "メール", "line" => "LINE", "meeting" => "打ち合わせ",
     "text" => "文章", "photo" => "写真・スキャン", "file" => "PDF・ファイル", "other" => "その他"
   }.freeze
-  SOURCE_FILTERS = {
-    "text" => { label: "文章", types: %w[text email line] },
+  MEDIA_FILTERS = {
+    "text" => { label: "文章", types: %w[text email line meeting] },
     "photo" => { label: "写真・スキャン", types: %w[photo] },
     "file" => { label: "PDF・ファイル", types: %w[file] },
+    "other" => { label: "その他", types: %w[other] }
+  }.freeze
+  ORIGIN_FILTERS = {
+    "memo" => { label: "直接入力", types: %w[text] },
+    "email" => { label: "メール", types: %w[email] },
+    "line" => { label: "LINE", types: %w[line] },
     "meeting" => { label: "打ち合わせ", types: %w[meeting] },
     "other" => { label: "その他", types: %w[other] }
   }.freeze
@@ -49,8 +55,22 @@ class Document < ApplicationRecord
     %w[SUPABASE_STORAGE_ENDPOINT SUPABASE_STORAGE_BUCKET SUPABASE_STORAGE_ACCESS_KEY_ID SUPABASE_STORAGE_SECRET_ACCESS_KEY].all? { |key| ENV[key].present? }
   end
 
-  def self.source_filter_key(value)
-    SOURCE_FILTERS.keys.find { |key| key == value || SOURCE_FILTERS.fetch(key)[:types].include?(value) }
+  def self.media_filter_key(value)
+    MEDIA_FILTERS.keys.find { |key| key == value || MEDIA_FILTERS.fetch(key)[:types].include?(value) }
+  end
+
+  def self.origin_filter_key(value)
+    ORIGIN_FILTERS.keys.find { |key| key == value || ORIGIN_FILTERS.fetch(key)[:types].include?(value) }
+  end
+
+  def self.media_label(source_type)
+    filter = MEDIA_FILTERS.values.find { |candidate| candidate[:types].include?(source_type.to_s) }
+    filter ? filter.fetch(:label) : "その他"
+  end
+
+  def self.origin_label(source_type)
+    filter = ORIGIN_FILTERS.values.find { |candidate| candidate[:types].include?(source_type.to_s) }
+    filter&.fetch(:label)
   end
 
   def attachment_inputs

@@ -1,0 +1,18 @@
+#!/bin/sh
+set -eu
+
+cd "$(dirname "$0")/.."
+
+echo "==> Preparing the test database"
+docker compose run --rm -e RAILS_ENV=test web bin/rails db:prepare
+
+echo "==> Running the Rails test suite"
+docker compose run --rm -e RAILS_ENV=test web bin/rails test
+
+echo "==> Checking Zeitwerk autoloading"
+docker compose run --rm -e RAILS_ENV=test web bin/rails zeitwerk:check
+
+echo "==> Checking the working tree for whitespace errors"
+git diff --check
+
+echo "==> Regression harness passed"

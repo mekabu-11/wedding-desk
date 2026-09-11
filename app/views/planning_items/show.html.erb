@@ -28,9 +28,9 @@
     </article>
   <% end %>
 </section>
-<section class="surface" style="margin-top:24px"><div class="section-heading"><h2>費用リンク</h2></div>
+<section class="surface" style="margin-top:24px"><div class="section-heading"><h2>関連する費用</h2></div>
   <% if @cost_links.empty? %><p class="muted">紐付いた費用はありません。</p><% else %><% @cost_links.each do |link| %><p><%= link.budget_item.title %> · <%= link.budget_item.amount_yen ? "#{number_to_currency(link.budget_item.amount_yen, unit: '', precision: 0)}円" : "金額未確認" %> <%= button_to "解除", planning_cost_link_path(link), method: :delete, class: "button secondary" %></p><% end %><% end %>
-<form action="<%= planning_cost_links_path %>" method="post" class="form-grid"><%= hidden_field_tag :authenticity_token, form_authenticity_token %><%= hidden_field_tag :planning_item_id, @planning_item.id %><div class="field"><%= label_tag :budget_item_id, "既存BudgetItemを追加" %><%= select_tag :budget_item_id, options_for_select([["選択してください", ""]] + @budget_item_options), required: true %></div><%= submit_tag "費用を追加", class: "button secondary" %></form>
+<form action="<%= planning_cost_links_path %>" method="post" class="form-grid"><%= hidden_field_tag :authenticity_token, form_authenticity_token %><%= hidden_field_tag :planning_item_id, @planning_item.id %><div class="field"><%= label_tag :budget_item_id, "登録済みの金額" %><%= select_tag :budget_item_id, options_for_select([["選択してください", ""]] + @budget_item_options), required: true %></div><%= submit_tag "費用を追加", class: "button secondary" %></form>
 </section>
 <section class="surface" style="margin-top:24px"><div class="section-heading"><h2>関連タスク</h2></div>
   <% @task_links.each do |link| %><p><%= link.task.title %> <%= button_to "解除", task_planning_link_path(link), method: :delete, class: "button secondary" %></p><% end %>

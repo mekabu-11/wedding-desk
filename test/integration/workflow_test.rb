@@ -125,6 +125,9 @@ class WorkflowTest < ActionDispatch::IntegrationTest
     get edit_wedding_path
     assert_response :success
     assert_select "[data-theme-toggle]", count: 1
+    assert_select "section.settings-section.settings-form", count: 1
+    assert_select "section.settings-section.settings-theme", count: 1
+    assert_select "section.settings-section.settings-sharing", count: 1
   end
 
   test "dashboard groups guest changes made in the same batch" do
@@ -141,9 +144,40 @@ class WorkflowTest < ActionDispatch::IntegrationTest
 
     get root_path
     assert_response :success
-    assert_includes response.body, "ゲスト 3件"
+    assert_includes response.body, "ゲストの変更 3件"
     assert_includes response.body, "出欠変更 3人"
     assert_includes response.body, "個別の変更を見る（3件）"
+    assert_includes response.body, "2026/09/10 00:20"
+    assert_select "article.activity-group", count: 1
+    assert_select "article.activity-group time.activity-time", count: 1
+    assert_select "article.activity-group .activity-icon svg", count: 1
+    assert_select "details.activity-group-details", count: 1
+    assert_select "[role='region'][aria-label*='ゲストの変更 3件']", count: 1
+    assert_operator response.body.index("架空ゲスト2"), :<, response.body.index("架空ゲスト0")
+  end
+
+  test "excel migration starts from wedding settings and household codes stay internal" do
+    owner = create_owner
+    wedding = create_wedding(owner)
+    household = wedding.households.create!(code: "INTERNAL-HOUSEHOLD", name: "架空世帯")
+    sign_in(owner)
+
+    get tasks_path
+    assert_response :success
+    assert_select "a[href='#{new_spreadsheet_import_path}']", count: 0
+
+    get edit_wedding_path
+    assert_response :success
+    assert_select "a[href='#{new_spreadsheet_import_path}']", count: 1
+
+    get guests_path(tab: "households")
+    assert_response :success
+    assert_includes response.body, household.name
+    refute_includes response.body, household.code
+
+    get edit_household_path(household)
+    assert_response :success
+    assert_select "input[name='household[code]']", count: 0
   end
 
   test "only the owner can add a member and a wedding is limited to two users" do
@@ -230,6 +264,64 @@ class WorkflowTest < ActionDispatch::IntegrationTest
     assert_select "img[onerror]", count: 0
     assert_includes response.body, "&lt;img"
     assert_equal "no-store", response.headers["Cache-Control"]
+  end
+
+  test "login screen presents the welcome illustration and accessible form" do
+    get new_session_path
+
+    assert_response :success
+    assert_select ".login-illustration[alt='ふたりが結婚式の招待状と席次表を確認しているイラスト']", count: 1
+    assert_select "form.form-stack[action='#{session_path}']", count: 1
+    assert_select "input[type='email'][autocomplete='username']", count: 1
+    assert_select "input[type='password'][autocomplete='current-password']", count: 1
+    assert_select "input[type='submit'][value='ログイン']", count: 1
+  end
+
+  test "mobile navigation exposes a compact menu control" do
+    owner = create_owner
+    create_wedding(owner)
+    sign_in(owner)
+
+    get root_path
+
+    assert_response :success
+    assert_select "button[data-mobile-menu-toggle][aria-controls='primary-navigation'][aria-expanded='false']", count: 1
+    assert_select "nav#primary-navigation[data-mobile-nav]", count: 1
+    assert_select "button[data-mobile-menu-close][hidden]", count: 1
+  end
+
+  test "manual changes across work areas create attributable history" do
+    owner = create_owner
+    wedding = create_wedding(owner)
+    sign_in(owner)
+
+    post tasks_path, params: { task: { title: "架空履歴タスク", category: "other", status: "todo", assignee: "person_a" } }
+    task = wedding.tasks.order(:id).last
+    patch task_path(task), params: { task: { status: "doing", lock_version: task.lock_version } }
+    post budget_items_path, params: { budget_item: { direction: "expense", category: "other", title: "架空履歴費用", amount_yen: 120_000, certainty: "estimate", inclusion: "included" } }
+    budget = wedding.budget_items.order(:id).last
+    post budget_item_money_movements_path(budget), params: { money_movement: { occurred_on: Date.current, kind: "payment", amount_yen: 20_000, idempotency_key: "history-#{budget.id}" } }
+    post planning_items_path, params: { planning_item: { title: "架空履歴検討", category: "production" } }
+    planning_item = wedding.planning_items.order(:id).last
+    post planning_item_planning_options_path(planning_item), params: { planning_option: { title: "架空履歴候補" } }
+    option = planning_item.planning_options.order(:id).last
+    post planning_cost_links_path, params: { planning_item_id: planning_item.id, budget_item_id: budget.id }
+    post task_planning_links_path, params: { planning_item_id: planning_item.id, task_id: task.id }
+
+    actions = wedding.change_events.where(actor: owner).pluck(:action)
+    assert_includes actions, "task_created"
+    assert_includes actions, "task_updated"
+    assert_includes actions, "budget_item_created"
+    assert_includes actions, "money_movement_created"
+    assert_includes actions, "planning_item_created"
+    assert_includes actions, "planning_option_created"
+    assert_includes actions, "planning_cost_link_created"
+    assert_includes actions, "task_planning_link_created"
+
+    get root_path
+    assert_includes response.body, "架空履歴タスク"
+    assert_includes response.body, "収支項目を追加"
+    assert_includes response.body, "候補を追加"
   end
 
   test "invalid credentials fail without creating authenticated session" do

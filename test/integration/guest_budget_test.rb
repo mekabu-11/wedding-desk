@@ -37,6 +37,26 @@ class GuestBudgetTest < ActionDispatch::IntegrationTest
     refute_includes response.body, "Weddingの外"
   end
 
+  test "guest and budget indexes expose useful state filters" do
+    attending = @wedding.guests.create!(name: "架空出席", attendance: "attending", side: "bride", invitation_status: "invited")
+    @wedding.guests.create!(name: "架空未回答", attendance: "unanswered", side: "groom", invitation_status: "planned")
+    get guests_path(tab: "individuals", attendance: "attending")
+    assert_response :success
+    assert_includes response.body, attending.name
+    refute_includes response.body, "架空未回答"
+    assert_select "select[name='attendance']", count: 1
+    assert_select ".status-badge", text: "出席"
+
+    paid = @wedding.budget_items.create!(direction: "expense", category: "venue", title: "架空完了", amount_yen: 10_000, certainty: "confirmed")
+    paid.money_movements.create!(wedding: @wedding, kind: "payment", amount_yen: 10_000, occurred_on: Date.current)
+    @wedding.budget_items.create!(direction: "expense", category: "venue", title: "架空未払い", amount_yen: 20_000, certainty: "estimate")
+    get budget_items_path(payment_status: "completed")
+    assert_response :success
+    assert_includes response.body, paid.title
+    refute_includes response.body, "架空未払い"
+    assert_select "select[name='payment_status']", count: 1
+  end
+
   test "guest index loads only the selected tab presentation" do
     get guests_path(tab: "seating")
     assert_response :success

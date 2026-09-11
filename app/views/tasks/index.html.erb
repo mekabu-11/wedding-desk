@@ -1,12 +1,19 @@
-<header class="page-heading"><div><h1><span class="page-title"><%= ui_icon(:tasks, size: 25) %><span>やること</span></span></h1><p>準備を追加して、期限の近い順に進めましょう。</p></div><div class="task-actions"><%= link_to "Excelをまとめて移行", new_spreadsheet_import_path, class: "button secondary" %><%= link_to new_task_path, class: "button primary" do %><%= ui_icon(:plus, size: 17) %><span>タスクを追加</span><% end %></div></header>
+<header class="page-heading"><div><h1><span class="page-title"><%= ui_icon(:tasks, size: 25) %><span>やること</span></span></h1><p>準備を追加して、期限の近い順に進めましょう。</p></div><div class="task-actions"><%= link_to new_task_path, class: "button primary" do %><%= ui_icon(:plus, size: 17) %><span>タスクを追加</span><% end %></div></header>
 <div class="task-toolbar">
 <% filters_active = [@status, @assignee, @category, @period, @query].any?(&:present?) %>
-<div class="task-actions task-toolbar-actions">
+<div class="task-toolbar-actions">
+<div class="task-view-actions">
 <%= link_to "一覧", tasks_path(request.query_parameters.except("view")), class: "button #{@view == 'list' ? 'primary' : 'secondary'}" %>
 <%= link_to "ガント", tasks_path(request.query_parameters.merge(view: "gantt")), class: "button #{@view == 'gantt' ? 'primary' : 'secondary'}" %>
 <button type="button" class="button secondary task-filter-trigger" data-filter-open aria-haspopup="dialog" aria-controls="task-filter-dialog" aria-expanded="false"><span>絞り込み</span><% if filters_active %><span class="badge green">適用中</span><% end %></button>
+</div>
+<details class="task-bulk-menu">
+<summary class="button secondary">一括変更</summary>
+<div class="task-bulk-menu-panel">
 <% if @view == "list" %><button type="submit" form="task-selection-form" class="button secondary task-selection-submit">選択を一括変更</button><% end %>
 <%= form_with url: bulk_preview_tasks_path, method: :post, class: "inline-form" do %><%= hidden_field_tag :selection, "filtered" %><%= hidden_field_tag :q, @query %><%= hidden_field_tag :status, @status %><%= hidden_field_tag :assignee, @assignee %><%= hidden_field_tag :category, @category %><%= hidden_field_tag :period, @period %><%= submit_tag "絞り込み結果を一括変更", class: "button secondary", disabled: @search_limit_exceeded %><% end %>
+</div>
+</details>
 </div>
 <dialog class="task-filter-dialog" id="task-filter-dialog" data-filter-dialog aria-labelledby="task-filter-title">
 <div class="task-filter-dialog-panel">

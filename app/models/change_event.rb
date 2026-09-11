@@ -7,22 +7,62 @@ class ChangeEvent < ApplicationRecord
     "Guest" => ["ゲスト", :name],
     "Task" => ["タスク", :title],
     "BudgetItem" => ["収支項目", :title],
+    "MoneyMovement" => ["入出金履歴", nil],
     "Document" => ["資料", :title],
     "PlanningItem" => ["検討項目", :title],
     "PlanningOption" => ["候補", :title],
     "Household" => ["世帯", :name],
     "SeatingTable" => ["卓", :label],
-    "GiftSet" => ["引き出物セット", :name]
+    "CashGiftRule" => ["ご祝儀区分", :label],
+    "GiftSet" => ["引き出物セット", :name],
+    "GiftAssignment" => ["引き出物割当", nil],
+    "MusicDetail" => ["BGM情報", nil]
   }.freeze
 
   ACTION_LABELS = {
     "guest_attendance_changed" => "出欠を更新",
     "guest_deleted" => "ゲストを削除",
+    "task_created" => "タスクを追加",
+    "task_updated" => "タスクを更新",
     "document_deleted" => "資料を削除",
+    "document_created" => "資料を追加",
     "task_bulk_updated" => "タスクを一括変更",
+    "budget_item_created" => "収支項目を追加",
+    "budget_item_updated" => "収支項目を更新",
+    "budget_item_deleted" => "収支項目を削除",
+    "money_movement_created" => "入出金履歴を追加",
+    "money_movement_updated" => "入出金履歴を更新",
+    "money_movement_deleted" => "入出金履歴を削除",
     "budget_estimate_recalculated" => "収支の見込を更新",
+    "household_created" => "世帯を追加",
+    "household_updated" => "世帯を更新",
+    "household_deleted" => "世帯を削除",
+    "seating_table_created" => "卓を追加",
+    "seating_table_updated" => "卓を更新",
+    "seating_table_deleted" => "卓を削除",
+    "cash_gift_rule_created" => "ご祝儀区分を追加",
+    "cash_gift_rule_updated" => "ご祝儀区分を更新",
+    "cash_gift_rule_deleted" => "ご祝儀区分を削除",
+    "gift_set_created" => "引き出物セットを追加",
+    "gift_set_updated" => "引き出物セットを更新",
+    "gift_set_deleted" => "引き出物セットを削除",
+    "gift_assignment_created" => "引き出物を割当",
+    "gift_assignment_updated" => "引き出物割当を更新",
+    "gift_assignment_deleted" => "引き出物割当を解除",
+    "planning_item_created" => "検討項目を追加",
+    "planning_item_updated" => "検討項目を更新",
+    "planning_item_deleted" => "検討項目を削除",
+    "planning_option_created" => "候補を追加",
+    "planning_option_updated" => "候補を更新",
+    "planning_option_deleted" => "候補を削除",
     "planning_option_selected" => "候補を採用",
     "planning_option_rejected" => "候補を見送り",
+    "planning_cost_link_created" => "費用を関連付け",
+    "planning_cost_link_deleted" => "費用の関連付けを解除",
+    "task_planning_link_created" => "タスクを関連付け",
+    "task_planning_link_deleted" => "タスクの関連付けを解除",
+    "music_detail_created" => "BGM情報を追加",
+    "music_detail_updated" => "BGM情報を更新",
     "change_set_applied" => "変更を反映"
   }.freeze
 
@@ -39,16 +79,33 @@ class ChangeEvent < ApplicationRecord
   FIELD_LABELS = {
     "title" => "タイトル",
     "description" => "説明",
+    "name" => "名前",
+    "notes" => "メモ",
     "status" => "状態",
     "assignee" => "担当",
     "category" => "カテゴリ",
     "amount_yen" => "金額",
+    "reference_price_yen" => "参考価格",
+    "default_amount_yen" => "基準額",
+    "unit_price_yen" => "単価",
+    "quantity" => "数量",
+    "capacity" => "定員",
+    "occurred_on" => "日付",
+    "kind" => "種類",
+    "starts_on" => "開始日",
+    "due_on" => "期限",
+    "due_at" => "期限日時",
     "certainty" => "確度",
     "inclusion" => "集計",
     "direction" => "区分",
     "source_kind" => "情報元",
     "cost_mode" => "費用処理",
-    "selected_option_id" => "採用候補"
+    "selected_option_id" => "採用候補",
+    "budget_item_id" => "費用",
+    "budget_item_title" => "費用",
+    "task_id" => "タスク",
+    "task_title" => "タスク",
+    "planning_option_id" => "候補"
   }.freeze
 
   encrypts :before, :after, :source
@@ -66,6 +123,10 @@ class ChangeEvent < ApplicationRecord
   end
 
   def subject_label
+    return movement_subject_label if target_type == "MoneyMovement"
+    return assignment_subject_label if target_type == "GiftAssignment"
+    return music_detail_subject_label if target_type == "MusicDetail"
+
     label, attribute = TARGET_LABELS.fetch(target_type, ["項目", nil])
     related_target = target if target && (!target.respond_to?(:wedding_id) || target.wedding_id == wedding_id)
     value = related_target.public_send(attribute) if related_target && attribute && related_target.respond_to?(attribute)
@@ -106,6 +167,25 @@ class ChangeEvent < ApplicationRecord
 
   private
 
+  def movement_subject_label
+    before_values = parsed_json(before)
+    item_id = parsed_after["budget_item_id"] || before_values["budget_item_id"]
+    kind = parsed_after["kind"] || before_values["kind"]
+    item = wedding.budget_items.find_by(id: item_id)
+    item ? "#{item.title}の#{MoneyMovement::KINDS.fetch(kind.to_s, "入出金")}" : "入出金履歴（削除済み）"
+  end
+
+  def assignment_subject_label
+    household_id = parsed_after["household_id"] || parsed_json(before)["household_id"]
+    wedding.households.find_by(id: household_id)&.name || "引き出物割当（削除済み）"
+  end
+
+  def music_detail_subject_label
+    option_id = parsed_after["planning_option_id"] || parsed_json(before)["planning_option_id"]
+    option = wedding.planning_options.find_by(id: option_id)
+    option ? "#{option.title}のBGM" : "BGM情報（削除済み）"
+  end
+
   def parsed_changes
     before_values = parsed_json(before)
     after_values = parsed_json(after)
@@ -140,8 +220,12 @@ class ChangeEvent < ApplicationRecord
       return BudgetItem::INCLUSIONS.fetch(value, value) if field == "inclusion"
       return BudgetItem::SOURCE_KINDS.fetch(value, value) if field == "source_kind"
       return "#{ActiveSupport::NumberHelper.number_to_delimited(value.to_i)}円" if field == "amount_yen"
+    when "MoneyMovement"
+      return MoneyMovement::KINDS.fetch(value, value) if field == "kind"
+      return "#{ActiveSupport::NumberHelper.number_to_delimited(value.to_i)}円" if field == "amount_yen"
     when "PlanningOption"
       return PlanningOption::STATUSES.fetch(value, value) if field == "status"
+      return "#{ActiveSupport::NumberHelper.number_to_delimited(value.to_i)}円" if field == "reference_price_yen"
       return PlanningOption.find_by(wedding_id: wedding_id, id: value)&.title || "候補 ##{value}" if field == "selected_option_id"
     end
 

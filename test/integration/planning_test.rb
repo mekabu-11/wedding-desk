@@ -38,6 +38,18 @@ class PlanningTest < ActionDispatch::IntegrationTest
     assert_equal "selected", option_b.reload.status
   end
 
+  test "planning index filters by candidate status" do
+    selected_item = @wedding.planning_items.create!(title: "架空採用項目", category: "production")
+    selected_item.planning_options.create!(wedding: @wedding, title: "架空採用候補", status: "selected")
+    @wedding.planning_items.create!(title: "架空下書き項目", category: "music").planning_options.create!(wedding: @wedding, title: "架空下書き候補", status: "draft")
+
+    get planning_items_path(status: "selected")
+    assert_response :success
+    assert_includes response.body, "架空採用項目"
+    refute_includes response.body, "架空下書き項目"
+    assert_select "select[name='status']", count: 1
+  end
+
   test "automatic estimate update rolls back amount when history recording fails" do
     guest = @wedding.guests.create!(name: "架空原子性 太郎", attendance: "pending")
     budget = @wedding.budget_items.create!(direction: "expense", category: "other", title: "架空原子性費", certainty: "estimate",

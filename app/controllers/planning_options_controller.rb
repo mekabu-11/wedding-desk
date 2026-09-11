@@ -4,7 +4,12 @@ class PlanningOptionsController < ApplicationController
 
   def create
     @option = @planning_item.planning_options.new(option_params.merge(wedding: current_wedding))
-    if @option.save
+    saved = ActiveRecord::Base.transaction do
+      result = @option.save
+      record_change!(@option, "planning_option_created", after: option_change_snapshot(@option)) if result
+      result
+    end
+    if saved
       redirect_to planning_item_path(@planning_item), notice: "候補を追加しました。", status: :see_other
     else
       redirect_to planning_item_path(@planning_item), alert: "候補を保存できませんでした。タイトルを確認してください.", status: :see_other
@@ -14,7 +19,14 @@ class PlanningOptionsController < ApplicationController
   def edit; end
 
   def update
-    if @option.update(option_params)
+    before = option_change_snapshot(@option)
+    saved = ActiveRecord::Base.transaction do
+      result = @option.update(option_params)
+      after = option_change_snapshot(@option)
+      record_change!(@option, "planning_option_updated", before: before, after: after) if result && before != after
+      result
+    end
+    if saved
       redirect_to planning_item_path(@option.planning_item), notice: "候補を保存しました。", status: :see_other
     else
       render :edit, status: :unprocessable_entity
@@ -54,7 +66,11 @@ class PlanningOptionsController < ApplicationController
   end
 
   def destroy
-    @option.destroy!
+    before = option_change_snapshot(@option)
+    ActiveRecord::Base.transaction do
+      @option.destroy!
+      record_change!(@option, "planning_option_deleted", before: before)
+    end
     redirect_to planning_item_path(@option.planning_item), notice: "候補を削除しました。", status: :see_other
   end
 
@@ -79,6 +95,10 @@ class PlanningOptionsController < ApplicationController
       permitted.delete(:status)
     end
     permitted
+  end
+
+  def option_change_snapshot(option)
+    change_snapshot(option, :title, :description, :status, :reference_price_yen)
   end
 
   def create_cost_link!(cost_mode)

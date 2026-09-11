@@ -17,17 +17,25 @@ class TasksController < ApplicationController
     @total_count = @matching_tasks.is_a?(Array) ? @matching_tasks.size : @matching_tasks.count
     @tasks = @matching_tasks.is_a?(Array) ? (@matching_tasks.sort_by { |task| [task.due_on || task.due_at&.to_date || Date.new(9999, 12, 31), task.id] }.slice((@page - 1) * 30, 30) || []) : @matching_tasks.by_deadline.offset((@page - 1) * 30).limit(30).to_a
     if @view == "gantt"
-      @range_start = @range == "month" ? @anchor.beginning_of_month : @anchor.beginning_of_week
-      @range_end = @range == "month" ? @anchor.end_of_month : @range_start + 6.days
-      range_tasks = @matching_tasks.is_a?(Array) ? @matching_tasks : @matching_tasks.limit(2001).to_a
+      @range_start = if @range == "month"
+        @anchor.beginning_of_month.beginning_of_week
+      else
+        @anchor.beginning_of_week
+      end
+      @range_end = if @range == "month"
+        @anchor.end_of_month.end_of_week
+      else
+        @range_start + 6.days
+      end
+      range_tasks = @matching_tasks.is_a?(Array) ? @matching_tasks : @matching_tasks.order(:id).limit(2001).to_a
       @gantt_limit_exceeded = range_tasks.size > 2000
-      range_tasks = range_tasks.first(2000)
-      @gantt_tasks = range_tasks.select do |task|
+      range_tasks = Task.sort_for_gantt(range_tasks.first(2000))
+      @gantt_tasks = Task.sort_for_gantt(range_tasks.select do |task|
         start_on = task.starts_on || task.due_on || task.due_at&.to_date
         end_on = task.due_on || task.due_at&.to_date || task.starts_on
         start_on && end_on && start_on <= @range_end && end_on >= @range_start
-      end
-      @undated_tasks = range_tasks.select { |task| task.starts_on.blank? && task.due_on.blank? && task.due_at.blank? }.first(100)
+      end)
+      @undated_tasks = Task.sort_for_gantt(range_tasks.select { |task| task.starts_on.blank? && task.due_on.blank? && task.due_at.blank? }).first(100)
     end
   end
 
@@ -54,14 +62,26 @@ class TasksController < ApplicationController
   end
   def create
     @task = current_wedding.tasks.new(task_params.merge(origin: "manual"))
-    if @task.save
+    saved = ActiveRecord::Base.transaction do
+      result = @task.save
+      record_change!(@task, "task_created", after: change_snapshot(@task, :title, :description, :assignee, :starts_on, :due_on, :due_at, :status, :category)) if result
+      result
+    end
+    if saved
       redirect_to tasks_path, notice: "タスクを追加しました。", status: :see_other
     else
       render :new, status: :unprocessable_entity
     end
   end
   def update
-    if @task.update(task_params)
+    before = change_snapshot(@task, :title, :description, :assignee, :starts_on, :due_on, :due_at, :status, :category)
+    saved = ActiveRecord::Base.transaction do
+      result = @task.update(task_params)
+      after = change_snapshot(@task, :title, :description, :assignee, :starts_on, :due_on, :due_at, :status, :category)
+      record_change!(@task, "task_updated", before: before, after: after) if result && before != after
+      result
+    end
+    if saved
       redirect_to tasks_path, notice: "タスクを保存しました。", status: :see_other
     else
       render :edit, status: :unprocessable_entity

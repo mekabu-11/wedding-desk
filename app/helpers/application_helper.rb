@@ -29,8 +29,8 @@ module ApplicationHelper
       '<path d="M12 16.8h.01"/>'
     ],
     settings: [
-      '<path d="M12 3.8v2.1M12 18.1v2.1M20.2 12h-2.1M5.9 12H3.8M17.8 6.2l-1.5 1.5M7.7 16.3l-1.5 1.5M17.8 17.8l-1.5-1.5M7.7 7.7 6.2 6.2"/>',
-      '<circle cx="12" cy="12" r="3.5"/>'
+      '<path d="M10.2 3.8h3.6l.5 2.1c.5.2 1 .5 1.5.9l2-.6 1.8 3.1-1.5 1.5c.1.5.2 1 .2 1.6s-.1 1.1-.2 1.6l1.5 1.5-1.8 3.1-2-.6c-.5.4-1 .7-1.5.9l-.5 2.1h-3.6l-.5-2.1c-.5-.2-1-.5-1.5-.9l-2 .6-1.8-3.1 1.5-1.5c-.1-.5-.2-1-.2-1.6s.1-1.1.2-1.6L4.4 9.3l1.8-3.1 2 .6c.5-.4 1-.7 1.5-.9z"/>',
+      '<circle cx="12" cy="12.4" r="2.6"/>'
     ],
     rings: [
       '<circle cx="9.2" cy="12" r="5.2"/><circle cx="14.8" cy="12" r="5.2"/>'
@@ -51,6 +51,31 @@ module ApplicationHelper
     link_to path, class: "nav-link #{'active' if selected}", aria: { current: selected ? "page" : nil } do
       safe_join([ui_icon(icon, size: 18), tag.span(label, class: "nav-label")].compact)
     end
+  end
+
+  def status_badge(label, tone: :neutral, prefix: nil)
+    text = [prefix, label].compact.join(" ")
+    tag.span(text, class: ["status-badge", "status-badge--#{tone}"])
+  end
+
+  def guest_side_tone(side)
+    { "bride" => :rose, "groom" => :blue, "unknown" => :muted }.fetch(side.to_s, :muted)
+  end
+
+  def guest_attendance_tone(attendance)
+    { "attending" => :positive, "declined" => :negative, "pending" => :warning, "unanswered" => :muted }.fetch(attendance.to_s, :muted)
+  end
+
+  def guest_invitation_tone(invitation_status)
+    { "planned" => :warning, "invited" => :positive, "unknown" => :muted }.fetch(invitation_status.to_s, :muted)
+  end
+
+  def task_status_tone(status)
+    { "todo" => :muted, "doing" => :warning, "done" => :positive, "cancelled" => :negative }.fetch(status.to_s, :muted)
+  end
+
+  def budget_payment_tone(status_key)
+    { "unsettled" => :warning, "partial" => :warning, "completed" => :positive, "unknown" => :muted, "overpaid" => :negative }.fetch(status_key.to_s, :muted)
   end
 
   def ui_icon(name, size: 20, label: nil, class_name: "ui-icon")
@@ -86,7 +111,7 @@ module ApplicationHelper
   def change_group_subject(events)
     event = events.first
     label = ChangeEvent::TARGET_LABELS.fetch(event.target_type, ["項目", nil]).first
-    "#{label} #{events.size}件"
+    "#{label}の変更 #{events.size}件"
   end
 
   def change_group_action(events)
@@ -97,6 +122,17 @@ module ApplicationHelper
     end
 
     "#{event.action_label}（#{events.size}件）"
+  end
+
+  def change_event_icon(event)
+    case event.target_type
+    when "Guest", "Household", "SeatingTable", "GiftSet" then :guests
+    when "Task" then :tasks
+    when "Document" then :documents
+    when "BudgetItem", "MoneyMovement" then :money
+    when "PlanningItem", "PlanningOption", "MusicDetail" then :planning
+    else :activity
+    end
   end
 
   def change_actor_label(event)
@@ -111,6 +147,9 @@ module ApplicationHelper
     return ["解析中", "muted"] if run.active?
     count = document.pending_candidates.count
     count.positive? ? ["#{count}件を確認", "amber"] : ["確認済み", "green"]
+  end
+  def document_source_label(document)
+    [Document.media_label(document.source_type), Document.origin_label(document.source_type)].compact.uniq.join(" · ")
   end
   def deadline_label(task)
     return task.due_at.in_time_zone.strftime("%Y/%m/%d %H:%M") if task.due_at

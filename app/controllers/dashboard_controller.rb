@@ -25,7 +25,7 @@ class DashboardController < ApplicationController
     @estimated_burden = @expense_total - @income_total
     @outstanding_items = budget_items.select { |item| item.amount_yen && item.remaining_amount.to_i > 0 }
     @outstanding_amount = @outstanding_items.sum { |item| item.remaining_amount.to_i }
-    recent_events = current_wedding.change_events.preload(:actor, :target).order(created_at: :desc).limit(200).to_a
+    recent_events = current_wedding.change_events.preload(:actor, :target).order(created_at: :desc, id: :desc).limit(200).to_a
     @recent_change_groups = recent_events.group_by do |event|
       [event.target_type, event.action, event.source, event.actor_id, event.created_at.to_i]
     end.values.first(8)

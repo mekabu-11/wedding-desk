@@ -1,9 +1,28 @@
 <div class="login-grid">
-  <section class="login-story"><div class="brand"><span class="brand-mark">w.</span>Wedding Desk</div><div><p class="eyebrow">ふたりの準備帳</p><h1>大切な日の準備に、<br>すこしの余白を。</h1><p>届いた連絡から、次にやることへ。<br>ふたりの結婚式準備を、ひとつの場所で。</p></div><span class="login-foot">連絡を残す。確かめる。ひとつずつ進める。</span></section>
-  <section class="login-form"><p class="eyebrow">おかえりなさい</p><h2>準備の続きをはじめる</h2><p class="muted">ふたりのワークスペースにログイン。</p>
-  <%= form_with url: session_path, class: "form-stack" do |f| %>
-    <div class="field"><%= f.label :email, "メールアドレス" %><%= f.email_field :email, required: true, autocomplete: "username", autofocus: true %></div>
-    <div class="field"><%= f.label :password, "パスワード" %><%= f.password_field :password, required: true, autocomplete: "current-password" %></div>
-    <%= f.submit "ログイン", class: "button primary full" %>
-  <% end %><p class="micro">招待制の個人用ワークスペースです。</p></section>
+  <section class="login-story">
+    <div class="brand"><span class="brand-mark">w.</span>Wedding Desk</div>
+    <div class="login-illustration-wrap">
+      <%= image_tag "login-wedding-illustration.png", class: "login-illustration", alt: "ふたりが結婚式の招待状と席次表を確認しているイラスト" %>
+    </div>
+    <div class="login-story-copy">
+      <p class="eyebrow">ふたりの結婚準備</p>
+      <h1>ふたりでつくる、<br>大切な一日。</h1>
+      <p>招待状も、やることも、決めたことも。<br>結婚式までの準備を、ひとつの場所に。</p>
+    </div>
+    <span class="login-foot">連絡を残す。確かめる。ひとつずつ進める。</span>
+  </section>
+
+  <section class="login-form">
+    <div class="login-form-head">
+      <p class="eyebrow">おかえりなさい</p>
+      <h2>準備の続きをはじめる</h2>
+      <p class="muted">ふたりのワークスペースにログイン。</p>
+    </div>
+    <%= form_with url: session_path, class: "form-stack" do |f| %>
+      <div class="field"><%= f.label :email, "メールアドレス" %><%= f.email_field :email, required: true, autocomplete: "username", autofocus: true %></div>
+      <div class="field"><%= f.label :password, "パスワード" %><%= f.password_field :password, required: true, autocomplete: "current-password" %></div>
+      <%= f.submit "ログイン", class: "button primary full" %>
+    <% end %>
+    <p class="micro">招待制の個人用ワークスペースです。</p>
+  </section>
 </div>

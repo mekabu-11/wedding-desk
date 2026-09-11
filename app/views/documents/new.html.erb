@@ -1,7 +1,7 @@
 <%= link_to "← 資料と連絡", documents_path, class: "back-link" %><header class="page-heading"><div><p class="eyebrow">連絡や資料を登録</p><h1>そのまま入れて、AIに整理させる。</h1><p>文章を貼るか、写真・PDFを添付してください。元の内容は登録データとして残ります。</p></div></header>
 <div class="input-grid"><section class="surface"><%= render "shared/errors", record: @document %>
 <% unless Analysis::OpenaiClient.configured? %><div class="callout"><strong>AI連携は未設定です</strong><p>資料の保存はできます。解析にはAPI設定が必要です。使い心地はサンプルで試せます。</p></div><% end %>
-<div class="callout"><strong>情報元は自動で分類します</strong><p>文章入力、写真・スキャン、PDF・ファイルの種類を登録時に記録します。メールやLINEなど既存の資料カテゴリもそのまま残ります。</p></div>
+<div class="callout"><strong>入力形式と情報元を分けて整理します</strong><p>文章・写真・PDFなどの入力形式を自動で分類します。メール・LINE・打ち合わせなどの情報元も、既存の資料と一緒に残ります。</p></div>
 <%= form_with model: @document, class: "form-stack" do |f| %>
   <div class="field"><%= f.label :title, "タイトル", class: "optional-label" %><%= f.text_field :title, maxlength: 150, placeholder: "例：式場からの次回打ち合わせの連絡" %><small>空欄なら本文の先頭から作成します。</small></div>
   <div class="field"><%= f.label :original_text, "文章" %><%= f.text_area :original_text, rows: 13, maxlength: 30000, placeholder: "ここにメール・LINE・打ち合わせメモなどを貼り付けてください。

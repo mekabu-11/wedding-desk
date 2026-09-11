@@ -7,7 +7,12 @@ class CashGiftRulesController < ApplicationController
 
   def create
     @cash_gift_rule = current_wedding.cash_gift_rules.new(rule_params)
-    if @cash_gift_rule.save
+    saved = ActiveRecord::Base.transaction do
+      result = @cash_gift_rule.save
+      record_change!(@cash_gift_rule, "cash_gift_rule_created", after: change_snapshot(@cash_gift_rule, :label, :default_amount_yen)) if result
+      result
+    end
+    if saved
       redirect_to guests_path(tab: "households"), notice: "ご祝儀区分を追加しました。", status: :see_other
     else
       render :new, status: :unprocessable_entity
@@ -17,7 +22,14 @@ class CashGiftRulesController < ApplicationController
   def edit; end
 
   def update
-    if @cash_gift_rule.update(rule_params)
+    before = change_snapshot(@cash_gift_rule, :label, :default_amount_yen)
+    saved = ActiveRecord::Base.transaction do
+      result = @cash_gift_rule.update(rule_params)
+      after = change_snapshot(@cash_gift_rule, :label, :default_amount_yen)
+      record_change!(@cash_gift_rule, "cash_gift_rule_updated", before: before, after: after) if result && before != after
+      result
+    end
+    if saved
       redirect_to guests_path(tab: "households"), notice: "ご祝儀区分を保存しました。既存の確定明細は変更していません。", status: :see_other
     else
       render :edit, status: :unprocessable_entity
@@ -27,7 +39,11 @@ class CashGiftRulesController < ApplicationController
   end
 
   def destroy
-    @cash_gift_rule.destroy!
+    before = change_snapshot(@cash_gift_rule, :label, :default_amount_yen)
+    ActiveRecord::Base.transaction do
+      @cash_gift_rule.destroy!
+      record_change!(@cash_gift_rule, "cash_gift_rule_deleted", before: before)
+    end
     redirect_to guests_path(tab: "households"), notice: "ご祝儀区分を削除しました。", status: :see_other
   end
 
