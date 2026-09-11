@@ -309,6 +309,8 @@ class Phase3Test < ActionDispatch::IntegrationTest
     refute config.key?("force_path_style")
     assert_empty ChangeOperation.allowlist_attribute_issues
     refute Rails.application.routes.routes.any? { |route| route.path.spec.to_s.include?("/rails/active_storage") }
+    get new_document_path
+    assert_select "button[type='submit'][name='organize'][value='1']", text: "保存してAI整理する →"
     get document_path(@wedding.documents.create!(title: "架空表示資料", original_text: "表示を確認する", source_type: "meeting", direction: "incoming"))
     assert_select "button[disabled]", text: "AI整理は未設定です"
   end
