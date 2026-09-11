@@ -15,7 +15,7 @@
 <section class="summary-strip" aria-label="準備状況">
   <%= link_to tasks_path(period: "week") do %><span class="summary-label"><%= ui_icon(:tasks, size: 17) %>今週</span><strong><%= @week_count %><small>件</small></strong><% end %>
   <%= link_to tasks_path(period: "overdue") do %><span class="summary-label"><%= ui_icon(:activity, size: 17) %>期限超過</span><strong class="<%= 'overdue' if @overdue_count.positive? %>"><%= @overdue_count %><small>件</small></strong><% end %>
-  <%= link_to guests_path do %><span class="summary-label"><%= ui_icon(:guests, size: 17) %>招待 / 出席</span><strong><%= @guest_total %><small> / <%= @attending_count %>人</small></strong><% end %>
+  <%= link_to guests_path do %><span class="summary-label"><%= ui_icon(:guests, size: 17) %>出席 / 招待</span><strong><%= @attending_count %><small> / <%= @guest_total %>人</small></strong><% end %>
   <%= link_to planning_items_path do %><span class="summary-label"><%= ui_icon(:planning, size: 17) %>検討中</span><strong><%= @considering_count %><small>件</small></strong><% end %>
 </section>
 
