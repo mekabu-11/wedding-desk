@@ -10,7 +10,7 @@ class DocumentsController < ApplicationController
     @documents = @documents.offset((@page - 1) * 30).limit(30)
   end
   def new
-    @document = Document.new(source_type: "email", direction: "incoming")
+    @document = Document.new(direction: "unknown")
   end
   def create
     @document = current_wedding.documents.build(document_params)

@@ -17,11 +17,13 @@ class Phase3Test < ActionDispatch::IntegrationTest
       file.write(PNG_1X1)
       file.rewind
       upload = Rack::Test::UploadedFile.new(file.path, "image/png")
-      post documents_path, params: { document: { title: "架空画像資料", source_type: "other", direction: "unknown", attachments: [upload] }, save_only: "1" }
+      post documents_path, params: { document: { title: "架空画像資料", attachments: [upload] }, save_only: "1" }
     end
 
     document = @wedding.documents.order(:id).last
     assert_redirected_to document_path(document)
+    assert_equal "photo", document.source_type
+    assert_equal "unknown", document.direction
     assert_nil document.reload.original_text
     attachment = document.attachments.attachments.sole
     get document_attachment_path(document, attachment)
@@ -40,6 +42,21 @@ class Phase3Test < ActionDispatch::IntegrationTest
     sign_in(other.users.first)
     get document_attachment_path(document, attachment)
     assert_response :not_found
+  end
+
+  test "document form keeps only the raw input and auto classifies text" do
+    get new_document_path
+    assert_response :success
+    assert_select "select[name='document[source_type]']", count: 0
+    assert_select "select[name='document[direction]']", count: 0
+    assert_select "input[name='document[occurred_at]']", count: 0
+    assert_includes response.body, "情報元は自動で分類します"
+
+    post documents_path, params: { document: { original_text: "文章入力だけで保存する" }, save_only: "1" }
+    document = @wedding.documents.order(:id).last
+    assert_equal "text", document.source_type
+    assert_equal "unknown", document.direction
+    assert_nil document.occurred_at
   end
 
   test "save only does not start analysis or cross-document organization" do

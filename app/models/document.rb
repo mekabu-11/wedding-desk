@@ -2,7 +2,10 @@ require "digest"
 require "base64"
 require "open3"
 class Document < ApplicationRecord
-  SOURCES = { "email" => "メール", "line" => "LINE", "meeting" => "打ち合わせ", "other" => "その他" }.freeze
+  SOURCES = {
+    "email" => "メール", "line" => "LINE", "meeting" => "打ち合わせ",
+    "text" => "文章入力", "photo" => "写真・スキャン", "file" => "PDF・ファイル", "other" => "その他"
+  }.freeze
   DIRECTIONS = { "incoming" => "相手から受信", "outgoing" => "自分から送信", "memo" => "メモ", "mixed" => "複数のやり取り", "unknown" => "不明" }.freeze
   belongs_to :wedding
   has_many_attached :attachments, dependent: :purge_later
@@ -14,6 +17,7 @@ class Document < ApplicationRecord
   before_destroy :record_deletion_event, prepend: true
   encrypts :original_text
   encrypts :memo
+  before_validation :infer_input_metadata
   before_validation :prepare_content
   validates :title, presence: true, length: { maximum: 150 }
   validates :original_text, length: { maximum: 30_000 }, allow_nil: true
@@ -74,6 +78,20 @@ class Document < ApplicationRecord
     !run || %w[failed completed].include?(run.status) || run.updated_at < 5.minutes.ago
   end
   private
+
+  def infer_input_metadata
+    self.direction = "unknown" if direction.blank?
+    return if source_type.present?
+
+    inputs = attachment_inputs
+    self.source_type = if inputs.blank?
+      "text"
+    elsif inputs.all? { |input| attachment_content_type(input).to_s.start_with?("image/") }
+      "photo"
+    else
+      "file"
+    end
+  end
 
   def detach_tasks_and_keep_source
     candidate_tasks = candidates.includes(:task).filter_map(&:task)
