@@ -23,8 +23,21 @@ class MealSet < ApplicationRecord
     specific || wedding.meal_sets.find_by(target_age_group: "all", default_for_target: true)
   end
 
+  def self.attending_guest_counts(wedding, meal_sets)
+    sets = meal_sets.to_a
+    return Hash.new(0) if sets.empty?
+
+    default_sets = sets.select(&:default_for_target?).index_by(&:target_age_group)
+    counts = Hash.new(0)
+    wedding.guests.attending.includes(:meal_set).find_each do |guest|
+      effective_set = guest.meal_set || default_sets[guest.age_group] || default_sets["all"]
+      counts[effective_set.id] += 1 if effective_set
+    end
+    counts
+  end
+
   def attending_guest_count
-    wedding.guests.attending.includes(:meal_set).count { |guest| guest.effective_meal_set == self }
+    self.class.attending_guest_counts(wedding, wedding.meal_sets).fetch(id, 0)
   end
 
   private

@@ -15,6 +15,7 @@ class CashGiftRule < ApplicationRecord
   validates :fallback_attribute, inclusion: { in: FALLBACK_ATTRIBUTES.keys }, allow_blank: true
   validates :fallback_value, length: { maximum: 150 }
   validate :fallback_value_matches_attribute
+  validate :unique_fallback_condition
   before_validation :normalize_fallback_value
   after_create :recalculate_cash_gift_estimates
   after_update :recalculate_cash_gift_estimates
@@ -62,7 +63,18 @@ class CashGiftRule < ApplicationRecord
     end
   end
 
+  def unique_fallback_condition
+    return unless fallback? && wedding
+
+    duplicate = wedding.cash_gift_rules
+      .where(fallback_attribute: fallback_attribute, fallback_value: fallback_value)
+      .where.not(id: id)
+      .exists?
+    errors.add(:fallback_attribute, "同じ適用条件の自動適用は1つだけ設定できます") if duplicate
+  end
+
   def normalize_fallback_value
     self.fallback_value = nil if fallback_attribute.blank? || fallback_attribute.in?(%w[none default])
+    self.fallback_value = fallback_value.to_s.strip.downcase if fallback_attribute == "relationship" && fallback_value.present?
   end
 end

@@ -127,6 +127,7 @@ class GuestsController < ApplicationController
 
   def load_meals
     @meal_sets = current_wedding.meal_sets.ordered
+    @meal_set_counts = MealSet.attending_guest_counts(current_wedding, @meal_sets)
     @meal_budget_items = current_wedding.budget_items.where(source_kind: "meal_set", source_id: @meal_sets.map(&:id)).index_by(&:source_id)
     @meal_guest_overrides = current_wedding.guests.includes(:meal_set).where.not(meal_set_id: nil).ordered
     @total_count = @meal_sets.size

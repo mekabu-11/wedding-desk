@@ -18,6 +18,11 @@ class GuestBudgetTest < ActionDispatch::IntegrationTest
       get path
       assert_response :success
     end
+    get new_cash_gift_rule_path
+    assert_select ".settings-hint", text: /世帯未設定の出席ゲスト/
+    @wedding.meal_sets.create!(name: "架空標準料理", target_age_group: "adult", unit_price_yen: 10_000, default_for_target: true)
+    get new_guest_path
+    assert_select ".settings-hint", text: /食事を個別に変える場合/
     assert_difference -> { @wedding.guests.count }, 1 do
       post guests_path, params: { guest: { name: "架空 花子", side: "bride", age_group: "adult", attendance: "attending" } }
     end
@@ -61,6 +66,8 @@ class GuestBudgetTest < ActionDispatch::IntegrationTest
     get guests_path(tab: "seating")
     assert_response :success
     assert_includes response.body, "席次"
+    assert_select ".guest-tabs a", count: 5
+    assert_includes response.body, "食事"
     refute_includes response.body, "Wedding内を検索"
 
     get guests_path(tab: "gifts")
@@ -365,6 +372,19 @@ class GuestBudgetTest < ActionDispatch::IntegrationTest
     assert rule.reload.persisted?
   end
 
+  test "cash gift fallback conditions cannot be duplicated within a wedding" do
+    @wedding.cash_gift_rules.create!(label: "架空新郎側", default_amount_yen: 30_000,
+      fallback_attribute: "side", fallback_value: "groom")
+    duplicate = @wedding.cash_gift_rules.new(label: "架空新郎側重複", default_amount_yen: 40_000,
+      fallback_attribute: "side", fallback_value: "groom")
+    refute duplicate.valid?
+    assert_includes duplicate.errors[:fallback_attribute], "同じ適用条件の自動適用は1つだけ設定できます"
+
+    different_condition = @wedding.cash_gift_rules.new(label: "架空新婦側", default_amount_yen: 40_000,
+      fallback_attribute: "side", fallback_value: "bride")
+    assert different_condition.valid?
+  end
+
   test "cash gift fallback preserves confirmed or received guest amounts" do
     rule = @wedding.cash_gift_rules.create!(label: "架空保護対象", default_amount_yen: 30_000,
       fallback_attribute: "side", fallback_value: "bride")
@@ -458,5 +478,10 @@ class GuestBudgetTest < ActionDispatch::IntegrationTest
     patch layout_seating_tables_path, params: { positions: { foreign.id.to_s => { x: 10, y: 10 } } }
     assert_redirected_to layout_seating_tables_path
     assert_equal [nil, nil], foreign.reload.attributes.values_at("position_x", "position_y")
+  end
+
+  test "seating layout preview is development-only" do
+    get layout_preview_seating_tables_path
+    assert_response :not_found
   end
 end

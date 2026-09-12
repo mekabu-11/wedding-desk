@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_12_000002) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_12_000003) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -116,7 +116,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_12_000002) do
     t.integer "lock_version", default: 0, null: false
     t.datetime "updated_at", null: false
     t.bigint "wedding_id", null: false
+    t.index ["wedding_id", "fallback_attribute", "fallback_value"], name: "index_cash_gift_rules_on_fallback_condition_unique", unique: true, where: "(((fallback_attribute)::text = ANY ((ARRAY['side'::character varying, 'relationship'::character varying, 'age_group'::character varying])::text[])) AND (fallback_value IS NOT NULL))"
     t.index ["wedding_id", "fallback_attribute", "fallback_value"], name: "index_cash_gift_rules_on_fallback_match"
+    t.index ["wedding_id", "fallback_attribute"], name: "index_cash_gift_rules_on_default_fallback_unique", unique: true, where: "((fallback_attribute)::text = 'default'::text)"
     t.index ["wedding_id", "label"], name: "index_cash_gift_rules_on_wedding_id_and_label", unique: true
     t.index ["wedding_id"], name: "index_cash_gift_rules_on_wedding_id"
     t.check_constraint "default_amount_yen >= 0", name: "cash_gift_rules_amount_non_negative"

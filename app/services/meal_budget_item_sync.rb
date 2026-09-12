@@ -4,15 +4,19 @@ class MealBudgetItemSync
       wedding = Wedding.find_by(id: wedding_id)
       return unless wedding
 
-      wedding.meal_sets.order(:id).find_each do |meal_set|
-        sync_set!(wedding, meal_set)
+      meal_sets = wedding.meal_sets.order(:id).to_a
+      return if meal_sets.empty?
+
+      counts = MealSet.attending_guest_counts(wedding, meal_sets)
+
+      meal_sets.each do |meal_set|
+        sync_set!(wedding, meal_set, counts[meal_set.id])
       end
     end
 
     private
 
-    def sync_set!(wedding, meal_set)
-      count = meal_set.attending_guest_count
+    def sync_set!(wedding, meal_set, count)
       item = wedding.budget_items.find_by(source_kind: "meal_set", source_id: meal_set.id)
       if count.positive?
         item ||= wedding.budget_items.build(

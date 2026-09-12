@@ -488,6 +488,10 @@ html[data-theme="dark"] .task-filter-dialog-close:hover{background:#25332b}
 /* Settings use larger section breaks so each decision is easy to scan. */
 .settings-section{margin-top:34px}
 .settings-section.settings-form{margin-top:0}
+.optional-settings{display:grid;gap:6px}
+.optional-settings .settings-section{margin-top:0}
+.settings-hint{line-height:1.8}
+.optional-mark{display:inline-block;margin-left:5px;padding:2px 6px;border:1px solid var(--line);border-radius:4px;font-size:10px;color:var(--muted);font-weight:400}
 .settings-form>.form-stack{gap:34px}
 .settings-form .form-grid{gap:21px}
 .settings-form .field small{display:block;margin-top:3px;line-height:1.9}
@@ -504,6 +508,8 @@ html[data-theme="dark"] .task-filter-dialog-close:hover{background:#25332b}
   .gantt-month-label{left:3px;font-size:8px}
   .settings-form>.form-stack{gap:29px}
   .settings-links{padding:26px 21px}
+  .guest-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;overflow:visible}
+  .guest-tabs a{display:flex;align-items:center;justify-content:center;min-height:44px;padding:10px 4px;text-align:center;white-space:normal;line-height:1.4}
 }
 
 /* Login: give the welcome panel a visual anchor without crowding the form. */

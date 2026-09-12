@@ -1,0 +1,17 @@
+<%= link_to "← 席次", guests_path(tab: "seating"), class: "back-link" %>
+<header class="page-heading"><div><p class="eyebrow">開発用プレビュー</p><h1>卓の位置を確認する</h1><p>実データを変更せず、卓のドラッグ・タッチ・矢印キー操作だけを確認できます。</p></div><span class="badge muted">保存されません</span></header>
+<section class="callout seating-layout-preview-note"><strong>確認用の卓を4件表示しています</strong><p>カードを動かして、スマホ幅でも操作しやすいか確認してください。保存処理の確認は実際の「卓の位置を編集」画面で行います。</p></section>
+<section class="surface seating-layout-editor">
+  <div class="section-heading"><div><p class="eyebrow">会場レイアウト</p><h2>卓の配置</h2></div><button type="button" class="button secondary" data-seating-layout-reset>自動配置に戻す</button></div>
+  <p class="micro seating-layout-help">卓を選んで矢印キーでも動かせます。ここでの変更は保存されません。</p>
+  <div class="seating-layout-board" data-seating-layout role="application" aria-label="卓の配置エリア">
+    <div class="seating-layout-stage" aria-hidden="true"><span>会場前方</span><span>会場後方</span></div>
+    <% @seating_tables.each_with_index do |table, index| %>
+      <% x, y = seating_layout_position(table, index, @seating_tables.size) %>
+      <% default_x, default_y = seating_layout_default_position(index, @seating_tables.size) %>
+      <article class="seating-layout-table" tabindex="0" role="group" aria-label="卓#{table.label}の位置" data-seating-table data-table-id="preview-<%= index + 1 %>" data-position-x="<%= x %>" data-position-y="<%= y %>" data-default-x="<%= default_x %>" data-default-y="<%= default_y %>" style="left:<%= x %>%;top:<%= y %>%">
+        <div class="seating-layout-table-handle" data-seating-drag-handle><strong>卓 <%= table.label %></strong><span>サンプル / 定員8</span></div>
+      </article>
+    <% end %>
+  </div>
+</section>

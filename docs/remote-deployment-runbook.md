@@ -22,7 +22,7 @@ bin/verify
 git status --short に意図しない変更がなく、bin/verify が成功してからpushする。今回の確認結果は次のとおり。
 
 ```
-120 runs / 971 assertions / 0 failures / 0 errors / 0 skips
+122 runs / 985 assertions / 0 failures / 0 errors / 0 skips
 ```
 
 ## 2. GitHubへpushする

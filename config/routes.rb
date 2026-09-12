@@ -29,6 +29,7 @@ Rails.application.routes.draw do
   resources :households, only: %i[new create edit update destroy]
   resources :seating_tables, only: %i[new create edit update destroy] do
     get :layout, on: :collection
+    get :layout_preview, on: :collection
     patch :layout, on: :collection, action: :update_layout
   end
   resources :cash_gift_rules, only: %i[new create edit update destroy]

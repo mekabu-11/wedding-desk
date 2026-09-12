@@ -25,6 +25,15 @@ class SeatingTablesController < ApplicationController
     @seating_tables = current_wedding.seating_tables.includes(:guests).order(:id)
   end
 
+  def layout_preview
+    return head :not_found unless Rails.env.development?
+
+    @seating_layout_preview = true
+    @seating_tables = 4.times.map do |index|
+      current_wedding.seating_tables.new(id: -(index + 1), label: "QA#{index + 1}", capacity: 8)
+    end
+  end
+
   def update_layout
     positions = params.permit(positions: {}).fetch(:positions, {})
     tables = current_wedding.seating_tables.where(id: positions.keys).index_by { |table| table.id.to_s }

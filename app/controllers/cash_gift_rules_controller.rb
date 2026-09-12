@@ -39,7 +39,7 @@ class CashGiftRulesController < ApplicationController
   end
 
   def destroy
-    before = change_snapshot(@cash_gift_rule, :label, :default_amount_yen)
+    before = change_snapshot(@cash_gift_rule, :label, :default_amount_yen, :fallback_attribute, :fallback_value)
     ActiveRecord::Base.transaction do
       @cash_gift_rule.destroy!
       record_change!(@cash_gift_rule, "cash_gift_rule_deleted", before: before)
